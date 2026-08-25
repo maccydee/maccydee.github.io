@@ -1,0 +1,1056 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- DESIGN PLAN  ============================================================
+  CONCEPT NAME: Kinetic Swiss Poster, live field, Signal colourway
+  A hybrid. The poster, its ink set, its composition and its choreography are
+  the Kinetic concept. The static printed grid behind it has been replaced by
+  the Generative concept's hand rolled Perlin flow field, re-inked for paper:
+  around a thousand agents tracing hairline contours in multiply, so they read
+  as ink soaking into the stock rather than light added to a screen. Graphite
+  and cobalt carry the field; chrome and vermilion appear only as sparks, so
+  the poster's own signal colours are never out-shouted by the background.
+  The pointer bends the field into a soft vortex within 240px.
+
+  PALETTE (monochrome with one red, the austere option, 5 colours, no more):
+    paper     #F2F1ED  ground stock
+    ink       #0D0D0D  text and rules
+    hot       #E63329  link 02 band, always carries ink text
+    deep      #1A1A1A  link 01 band, always carries paper text
+    bright    #C9C4B6  disc, arc and the link 02 hover wipe
+
+    Contrast pairs, all measured (WCAG ratio):
+      ink on paper           17.20 : 1
+      ink on hot band         4.51 : 1
+      paper on deep band     15.40 : 1
+      ink on bright wipe     11.16 : 1
+    Every pair the CSS can actually produce, resting and hovered,
+    clears AA. Colourway: Signal.
+
+  TYPEFACES:
+    display: Archivo variable, wght 800-900, wdth 108-118, tracking -0.045em.
+             A neo-grotesque with a real width axis, so the huge type is
+             genuinely widened rather than stretched.
+    label:   Space Mono 400/700, uppercase, +0.16em tracking, tabular figures.
+             Mono against a heavy grotesque is real contrast, not two sans.
+    Deliberately not Inter, anywhere.
+
+  LAYOUT CONCEPT:
+    One full-viewport poster on a 12-column field, with the live flow field
+    painted full-bleed behind everything and the colour planes above it. Composition reads top-left to bottom-right:
+    meta rule, CALLUM in ink, MCDONALD reversed out of a vermilion block,
+    a short lede in a 5-column measure, then the two links as two enormous
+    staggered bands (A spans 1/12, B spans 2/13) so the offset notch lets a
+    chrome disc show through. Negative space carries the middle third.
+    The two-link problem is solved by scale, not padding: each link is a
+    poster element in its own right, indexed 01/02, with its own colour
+    identity and its own recomposition of the background planes.
+
+  MOTION:
+    Entry is pure CSS, staggered 0 -> 440ms, each step 460ms, last frame at
+    900ms. Expo-out easing cubic-bezier(0.16,1,0.3,1): fast departure, long
+    settle, zero overshoot. Only transform and opacity move, ever.
+    animation-fill-mode is BACKWARDS, so the base rule is already the final
+    composition. No JS is involved in the entry: if scripting fails the page
+    still animates; if CSS animation fails the page is simply finished.
+    Pointer parallax is the only JS, driven through --px/--py which default
+    to 0px, so no-JS renders the neutral composition.
+    prefers-reduced-motion kills every animation and transition outright.
+
+  THEME:
+    COMMITTED, NOT REMAPPED. This is a printed poster: it has one colourway
+    and paints an explicit paper background on html and body, with
+    color-scheme: only light so no UA dark treatment can bleed through.
+    A dark remap is deliberately not provided because inverting an
+    International Style poster destroys the figure/ground relationship the
+    whole composition is built on.
+
+  AESTHETIC RISK (field):
+    A living background usually eats its own text. The name is 100px of solid
+    ink and survives anything, but the lede, the section label and the
+    masthead meta row are 12 to 20px and would not, so each sits on its own
+    opaque paper ground. Second risk: a flow field on paper turns to fuzz if
+    it is too dense. Mitigated by a raised density threshold so the field
+    breaks into ribbons with real voids, alpha at 0.13 to 0.17, and a slow
+    wash back to paper. Third: performance. The loop is capped at 1100 agents,
+    scaled down on small viewports and low core counts, paused when the tab is
+    hidden or the canvas is off-screen, and prefers-reduced-motion paints one
+    static frame and never starts it.
+
+  AESTHETIC RISK (composition):
+    Committing the entire lower half of the poster to two link bands means
+    if the bands do not read as pressable, the page reads as decoration with
+    no exit. Mitigation: each band carries four independent affordance
+    signals at once, a 3px ink rule, an index numeral, a diagonal arrow that
+    travels on hover, and a full-width colour wipe on hover/focus. Secondary
+    risk: vermilion at 4.98:1 with ink clears AA but with little headroom, so
+    ink is the only colour ever set on vermilion, anywhere on the page.
+============================================================================ -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Callum McDonald</title>
+<meta name="description" content="Callum McDonald. Engineering Manager. Security detection, vulnerability management and AI enablement.">
+<meta name="color-scheme" content="light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+@layer reset, tokens, base, field, poster, components, motion, utilities;
+
+/* ---------------------------------------------------------------- reset */
+@layer reset {
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  svg, img { display: block; max-width: 100%; }
+  a { color: inherit; text-decoration: none; }
+  h1, h2, p { text-wrap: pretty; }
+}
+
+/* --------------------------------------------------------------- tokens */
+@layer tokens {
+  :root {
+    color-scheme: only light;
+
+    /* ink set */
+    --c-paper:     #F2F1ED;
+    --c-ink:       #0D0D0D;
+    --c-vermilion: #E63329;
+    --c-cobalt:    #1A1A1A;
+    --c-chrome:    #C9C4B6;
+    --c-mesh:      rgba(13, 13, 13, 0.13);
+    --c-mesh-lite: rgba(242, 241, 237, 0.34);
+
+    /* type roles */
+    --font-display: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-label:   "Space Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+    /* major third scale, 16px base */
+    --t-xs:   0.75rem;    /* 12 */
+    --t-sm:   0.875rem;   /* 14 */
+    --t-base: 1rem;       /* 16 */
+    --t-lg:   1.25rem;    /* 20 */
+    --t-xl:   1.5625rem;  /* 25 */
+    --t-2xl:  1.9375rem;  /* 31 */
+    --t-3xl:  2.4375rem;  /* 39 */
+    --t-4xl:  3.0625rem;  /* 49 */
+    --t-5xl:  3.8125rem;  /* 61 */
+    --t-6xl:  4.75rem;    /* 76 */
+    --t-7xl:  5.9375rem;  /* 95 */
+    --t-8xl:  7.4375rem;  /* 119 */
+    --t-9xl:  9.3125rem;  /* 149 */
+
+    /* 8px spacing scale */
+    --s-1: 4px;  --s-2: 8px;  --s-3: 16px; --s-4: 24px;
+    --s-5: 32px; --s-6: 48px; --s-7: 64px; --s-8: 96px;
+
+    /* structure */
+    --rule:  3px;
+    --tilt:  -14deg;
+
+    /* motion */
+    --dur:      460ms;
+    --dur-fast: 300ms;
+    --ease:     cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* parallax, overwritten by JS, neutral without it */
+    --px: 0px;
+    --py: 0px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root { --dur: 0.01ms; --dur-fast: 0.01ms; }
+  }
+}
+
+/* ----------------------------------------------------------------- base */
+@layer base {
+  html { background: var(--c-paper); }
+
+  body {
+    background: var(--c-paper);
+    color: var(--c-ink);
+    font-family: var(--font-display);
+    font-size: var(--t-base);
+    font-variation-settings: "wdth" 100, "wght" 450;
+    line-height: 1.5;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  :focus-visible {
+    outline: var(--rule) solid var(--c-ink);
+    outline-offset: 5px;
+  }
+
+  ::selection { background: var(--c-chrome); color: var(--c-ink); }
+
+  .num { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+}
+
+/* -------------------------------------------------- field: colour planes */
+@layer field {
+  .field {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .plane {
+    position: absolute;
+    transform:
+      translate3d(calc(var(--px) * var(--depth, 1)), calc(var(--py) * var(--depth, 1)), 0)
+      rotate(var(--rot, 0deg));
+    will-change: transform;
+  }
+
+  .plane__fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--fill, transparent);
+    transform: none;
+    transition: transform var(--dur) var(--ease);
+  }
+
+  /* cobalt slab, top right, bleeds off two edges */
+  .plane--cobalt {
+    --rot: var(--tilt);
+    --depth: -1.6;
+    --fill: var(--c-cobalt);
+    top: 13%;
+    right: -13%;
+    width: 45%;
+    height: 55%;
+  }
+
+  /* vermilion hairbar cutting the whole field on the secondary grid */
+  .plane--bar {
+    --rot: var(--tilt);
+    --depth: 2.4;
+    --fill: var(--c-vermilion);
+    top: -40%;
+    left: 22%;
+    width: 12px;
+    height: 190%;
+  }
+
+  /* second, thinner ink bar, offset, to make the diagonal grid read */
+  .plane--bar2 {
+    --rot: var(--tilt);
+    --depth: 1.5;
+    --fill: var(--c-ink);
+    top: -40%;
+    left: 30.5%;
+    width: var(--rule);
+    height: 190%;
+  }
+
+  /* chrome disc, peeks through the notch between the two link bands */
+  .plane--disc {
+    --depth: -2.8;
+    right: 2%;
+    bottom: 16%;
+    width: clamp(140px, 27vmin, 300px);
+    aspect-ratio: 1;
+  }
+  .plane--disc .plane__fill {
+    background: var(--c-chrome);
+    border-radius: 50%;
+  }
+
+  /* concentric arcs, Muller-Brockmann geometry, sits on the cobalt slab */
+  .plane--arcs {
+    --rot: var(--tilt);
+    --depth: -2.2;
+    top: 3%;
+    right: -9%;
+    width: 37%;
+    aspect-ratio: 1;
+  }
+  .arcs { width: 100%; height: 100%; }
+  .arcs circle { fill: none; stroke: var(--c-mesh-lite); stroke-width: 1.5; }
+  .arcs .arcs__hot { stroke: var(--c-chrome); stroke-width: 4; }
+
+  /* the -14deg hairline grid over everything */
+  /* Narrow screens: every plane is pushed into the right margin so the
+     measured text column below never sits on a saturated fill. */
+  @media (max-width: 899px) {
+    .plane--bar  { left: 84%; width: 8px; }
+    .plane--bar2 { left: 93%; }
+    .plane--cobalt { top: 10%; right: -32%; width: 62%; height: 26%; }
+    .plane--arcs   { top: 3%; right: -24%; width: 54%; }
+  }
+
+  /* the live flow field replaces the static printed grid */
+  .fieldcanvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    background: var(--c-paper);
+  }
+}
+
+/* --------------------------------------------------------------- poster */
+@layer poster {
+  .poster {
+    position: relative;
+    z-index: 1;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    column-gap: var(--s-3);
+    align-content: space-between;
+    row-gap: clamp(var(--s-4), 4vh, var(--s-6));
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: var(--s-5) var(--s-4) var(--s-5);
+  }
+
+  .poster > *:not(.field) { position: relative; z-index: 1; }
+
+  @media (min-width: 768px) {
+    .poster { padding: var(--s-5) var(--s-6) var(--s-4); }
+  }
+  @media (min-width: 1100px) {
+    .poster { padding: var(--s-5) var(--s-7) var(--s-5); }
+  }
+
+  .masthead { grid-column: 1 / -1; }
+
+  /* meta rule -------------------------------------------------------- */
+  .meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-3);
+    border-top: var(--rule) solid var(--c-ink);
+    padding-top: var(--s-2);
+    margin-bottom: clamp(var(--s-3), 4vh, var(--s-5));
+  }
+  @media (min-width: 900px) {
+    .meta { max-width: 60%; }
+  }
+  .meta span {
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  /* name ------------------------------------------------------------- */
+  .name {
+    font-size: clamp(var(--t-3xl), min(11.2vw, 13.4vh), var(--t-9xl));
+    font-variation-settings: "wdth" 112, "wght" 900;
+    line-height: 0.82;
+    letter-spacing: -0.045em;
+    text-transform: uppercase;
+  }
+
+  .name__line {
+    display: block;
+    overflow: hidden;
+    position: relative;
+  }
+  .name__line--fill {
+    width: max-content;
+    max-width: 100%;
+    padding-inline: 0.08em;
+    margin-top: 0.04em;
+  }
+  .name__bg {
+    position: absolute;
+    inset: 0;
+    background: var(--c-vermilion);
+    transform-origin: left center;
+  }
+  .name__in {
+    display: block;
+    position: relative;
+    /* trims the grotesque's leading so the vermilion block hugs the caps */
+    padding-block: 0.16em 0.1em;
+    margin-block: -0.1em -0.06em;
+  }
+
+  /* lede ------------------------------------------------------------- */
+  .lede {
+    grid-column: 1 / -1;
+    max-width: 34ch;
+    margin-top: clamp(var(--s-3), 3vh, var(--s-5));
+    font-size: clamp(var(--t-base), 1.1vw + 0.7rem, var(--t-lg));
+    font-variation-settings: "wdth" 100, "wght" 520;
+    line-height: 1.32;
+    letter-spacing: -0.012em;
+    border-left: var(--rule) solid var(--c-vermilion);
+    padding-left: var(--s-3);
+  }
+  @media (max-width: 899px) {
+    .lede { max-width: 23ch; }
+  }
+  @media (min-width: 900px) {
+    .lede {
+      margin-left: 32%;
+      max-width: 30ch;
+    }
+  }
+}
+
+/* ----------------------------------------------------------- components */
+@layer components {
+  .links { grid-column: 1 / -1; }
+
+  .sec {
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding-bottom: var(--s-2);
+    border-bottom: var(--rule) solid var(--c-ink);
+    margin-bottom: var(--s-3);
+  }
+
+  .link-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    column-gap: var(--s-3);
+    row-gap: var(--s-3);
+  }
+
+  .link {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--s-3);
+    grid-column: 1 / -1;
+    padding: var(--s-4) var(--s-3);
+    border: var(--rule) solid var(--c-ink);
+    transition: transform var(--dur-fast) var(--ease);
+  }
+  @media (min-width: 768px) {
+    .link { padding: var(--s-3) var(--s-4); column-gap: var(--s-5); }
+    .link--a { grid-column: 1 / 12; }
+    .link--b { grid-column: 2 / 13; }
+  }
+
+  .link--a { background: var(--c-cobalt); color: var(--c-paper); }
+  .link--b { background: var(--c-vermilion); color: var(--c-ink); }
+
+  /* the hover wipe. transform only, origin left, sits under the text. */
+  .link__wipe {
+    position: absolute;
+    inset: 0;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform var(--dur) var(--ease);
+    z-index: 0;
+  }
+  .link--a .link__wipe { background: var(--c-ink); }
+  .link--b .link__wipe { background: var(--c-chrome); }
+
+  .link > *:not(.link__wipe) { position: relative; z-index: 1; }
+
+  .link__idx {
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    align-self: start;
+    padding-top: 0.35em;
+  }
+
+  .link__body { min-width: 0; }
+
+  .link__name {
+    display: block;
+    font-size: clamp(var(--t-2xl), min(5.2vw, 4.7vh), var(--t-4xl));
+    font-variation-settings: "wdth" 108, "wght" 800;
+    line-height: 0.94;
+    letter-spacing: -0.035em;
+    text-transform: uppercase;
+  }
+  .link__handle {
+    display: block;
+    margin-top: var(--s-2);
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
+    letter-spacing: 0.06em;
+    word-break: break-word;
+  }
+  @media (min-width: 768px) {
+    .link__handle { font-size: var(--t-sm); }
+  }
+
+  .link__arrow {
+    width: clamp(30px, 6vw, 52px);
+    height: clamp(30px, 6vw, 52px);
+    flex: none;
+    overflow: visible;
+  }
+  .link__arrow g {
+    transition: transform var(--dur-fast) var(--ease);
+  }
+  .link__arrow path {
+    stroke: currentColor;
+    stroke-width: 7;
+    stroke-linecap: square;
+    fill: none;
+  }
+
+  /* states ----------------------------------------------------------- */
+  .link:hover .link__wipe,
+  .link:focus-visible .link__wipe { transform: scaleX(1); }
+
+  .link:hover .link__arrow g,
+  .link:focus-visible .link__arrow g { transform: translate(12px, -12px); }
+
+  .link:hover { transform: translate3d(0, -3px, 0); }
+
+  .link:active {
+    transform: translate3d(0, 2px, 0) scale(0.995);
+    transition-duration: 90ms;
+  }
+
+  .link:focus-visible {
+    outline: var(--rule) solid var(--c-ink);
+    outline-offset: 6px;
+  }
+
+  /* hovering a link recomposes the poster behind it */
+  .poster:has(.link--a:hover) .plane--cobalt .plane__fill,
+  .poster:has(.link--a:focus-visible) .plane--cobalt .plane__fill {
+    transform: scale(1.16) translateX(-6%);
+  }
+  .poster:has(.link--a:hover) .plane--arcs .plane__fill,
+  .poster:has(.link--a:focus-visible) .plane--arcs .plane__fill {
+    transform: rotate(24deg);
+  }
+  .poster:has(.link--b:hover) .plane--disc .plane__fill,
+  .poster:has(.link--b:focus-visible) .plane--disc .plane__fill {
+    transform: scale(1.9) translate(-14%, -6%);
+  }
+  .poster:has(.link--b:hover) .plane--bar .plane__fill,
+  .poster:has(.link--b:focus-visible) .plane--bar .plane__fill {
+    transform: scaleX(4);
+  }
+
+  /* colophon --------------------------------------------------------- */
+  .colophon {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-2) var(--s-4);
+    border-top: var(--rule) solid var(--c-ink);
+    padding-top: var(--s-2);
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* desktop-only vertical spine on the left margin */
+  .spine {
+    display: none;
+    position: absolute;
+    left: 18px;
+    bottom: 128px;
+    transform: rotate(-90deg);
+    transform-origin: left bottom;
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--c-ink);
+    opacity: 0.55;
+  }
+  @media (min-width: 1100px) {
+    .spine { display: block; }
+  }
+}
+
+/* --------------------------------------------------------------- motion */
+@layer motion {
+  /* Base rules above are ALREADY the finished composition.
+     Keyframes only describe where things come FROM, and fill-mode is
+     backwards, so nothing is ever left stuck or invisible. */
+
+  @keyframes riseIn   { from { transform: translate3d(0, 112%, 0); } }
+  @keyframes liftIn   { from { transform: translate3d(0, 26px, 0); opacity: 0; } }
+  @keyframes wipeIn   { from { transform: scaleX(0); } }
+  @keyframes slabIn   { from { transform: translate3d(0, -14%, 0) scale(0.86); opacity: 0; } }
+  @keyframes barIn    { from { transform: scaleY(0); } }
+  @keyframes discIn   { from { transform: scale(0.2); opacity: 0; } }
+  @keyframes ruleIn   { from { transform: scaleX(0); } }
+  @keyframes fadeIn   { from { opacity: 0; } }
+
+  .anim {
+    animation-duration: var(--dur);
+    animation-timing-function: var(--ease);
+    animation-fill-mode: backwards;
+    animation-delay: var(--d, 0ms);
+  }
+
+  .meta        { animation-name: liftIn; }
+  .name__in    { animation-name: riseIn; }
+  .name__bg    { animation-name: wipeIn; transform-origin: left center; }
+  .lede        { animation-name: liftIn; }
+  .sec         { animation-name: liftIn; }
+  .link        { animation-name: liftIn; }
+  .colophon    { animation-name: liftIn; }
+  .spine       { animation-name: fadeIn; }
+
+  .plane--cobalt .plane__fill,
+  .plane--arcs   .plane__fill { animation-name: slabIn; }
+  .plane--bar    .plane__fill,
+  .plane--bar2   .plane__fill { animation-name: barIn; transform-origin: top center; }
+  .plane--disc   .plane__fill { animation-name: discIn; }
+
+  /* stagger. last frame lands at 440 + 460 = 900ms. */
+  .mesh                       { --d: 0ms;   animation-duration: 700ms; }
+  .plane--bar   .plane__fill  { --d: 40ms; }
+  .plane--bar2  .plane__fill  { --d: 100ms; }
+  .plane--cobalt .plane__fill { --d: 0ms; }
+  .plane--arcs  .plane__fill  { --d: 140ms; }
+  .plane--disc  .plane__fill  { --d: 260ms; }
+
+  .meta            { --d: 40ms; }
+  .name__l1        { --d: 100ms; }
+  .name__bg        { --d: 180ms; }
+  .name__l2        { --d: 240ms; }
+  .lede            { --d: 300ms; }
+  .sec             { --d: 340ms; }
+  .link--a         { --d: 380ms; }
+  .link--b         { --d: 440ms; }
+  .colophon        { --d: 440ms; }
+  .spine           { --d: 440ms; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition: none !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ------------------------------------------------------------ utilities */
+@layer utilities {
+  .vh {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+</style>
+<style>
+/* ---------------------------------------------------------------------------
+   Small type sits on printed paper, never straight on the live field. The
+   name is 100px of solid ink and survives anything behind it; the lede, the
+   section label and the masthead meta row are 12 to 20px and would not, so
+   each gets its own opaque ground. Unlayered on purpose, so it wins.
+--------------------------------------------------------------------------- */
+.meta {
+  background: var(--c-paper);
+  padding: var(--s-1) var(--s-2);
+  margin-left: calc(var(--s-2) * -1);
+  margin-right: calc(var(--s-2) * -1);
+}
+
+.lede {
+  background: var(--c-paper);
+  padding-top: var(--s-1);
+  padding-bottom: var(--s-1);
+  padding-right: var(--s-3);
+}
+
+.sec {
+  background: var(--c-paper);
+  padding-top: var(--s-1);
+  padding-left: var(--s-2);
+  padding-right: var(--s-2);
+  margin-left: calc(var(--s-2) * -1);
+  margin-right: calc(var(--s-2) * -1);
+}
+</style>
+</head>
+<body>
+
+<canvas id="fieldcanvas" class="fieldcanvas" aria-hidden="true"></canvas>
+
+<main class="poster">
+
+  <div class="field" aria-hidden="true">
+
+    <div class="plane plane--cobalt"><i class="plane__fill anim"></i></div>
+    <div class="plane plane--bar"><i class="plane__fill anim"></i></div>
+    <div class="plane plane--bar2"><i class="plane__fill anim"></i></div>
+
+    <div class="plane plane--arcs">
+      <i class="plane__fill anim">
+        <svg class="arcs" viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="26" />
+          <circle cx="100" cy="100" r="42" />
+          <circle cx="100" cy="100" r="58" />
+          <circle cx="100" cy="100" r="74" class="arcs__hot" />
+          <circle cx="100" cy="100" r="90" />
+        </svg>
+      </i>
+    </div>
+
+    <div class="plane plane--disc"><i class="plane__fill anim"></i></div>
+  </div>
+
+  <header class="masthead">
+    <div class="meta anim">
+      <span>Index</span>
+      <span class="num">2026</span>
+    </div>
+
+    <h1 class="name">
+      <span class="name__line"><span class="name__in name__l1 anim">Callum</span></span>
+      <span class="name__line name__line--fill">
+        <i class="name__bg anim" aria-hidden="true"></i>
+        <span class="name__in name__l2 anim">McDonald</span>
+      </span>
+    </h1>
+
+    <p class="lede anim">Engineering Manager. Security detection, vulnerability management and AI enablement.</p>
+  </header>
+
+  <nav class="links" aria-labelledby="find">
+    <h2 class="sec anim" id="find">Where to find me</h2>
+
+    <div class="link-grid">
+      <a class="link link--a anim" href="https://github.com/maccydee" rel="me noopener">
+        <span class="link__wipe" aria-hidden="true"></span>
+        <span class="link__idx num" aria-hidden="true">01</span>
+        <span class="link__body">
+          <span class="link__name">GitHub</span>
+          <span class="link__handle">@maccydee</span>
+        </span>
+        <svg class="link__arrow" viewBox="0 0 100 100" aria-hidden="true">
+          <g><path d="M22 78 L78 22 M40 22 H78 V60" /></g>
+        </svg>
+      </a>
+
+      <a class="link link--b anim" href="https://www.linkedin.com/in/callum-mcdonald-b416b299/" rel="me noopener">
+        <span class="link__wipe" aria-hidden="true"></span>
+        <span class="link__idx num" aria-hidden="true">02</span>
+        <span class="link__body">
+          <span class="link__name">LinkedIn</span>
+          <span class="link__handle">/in/callum-mcdonald</span>
+        </span>
+        <svg class="link__arrow" viewBox="0 0 100 100" aria-hidden="true">
+          <g><path d="M22 78 L78 22 M40 22 H78 V60" /></g>
+        </svg>
+      </a>
+    </div>
+  </nav>
+
+  <footer class="colophon anim">
+    <p>&copy; <span class="num">2026</span> Callum McDonald</p>
+    <p aria-hidden="true">Set in Archivo &amp; Space Mono</p>
+  </footer>
+
+  <p class="spine anim" aria-hidden="true">Callum McDonald</p>
+</main>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var fine   = window.matchMedia('(hover: hover) and (pointer: fine)');
+  if (reduce.matches || !fine.matches) return;
+
+  var tx = 0, ty = 0, cx = 0, cy = 0, raf = null;
+
+  function tick() {
+    cx += (tx - cx) * 0.075;
+    cy += (ty - cy) * 0.075;
+    root.style.setProperty('--px', cx.toFixed(2) + 'px');
+    root.style.setProperty('--py', cy.toFixed(2) + 'px');
+    if (Math.abs(tx - cx) > 0.06 || Math.abs(ty - cy) > 0.06) {
+      raf = requestAnimationFrame(tick);
+    } else {
+      raf = null;
+    }
+  }
+
+  window.addEventListener('pointermove', function (e) {
+    tx = (e.clientX / window.innerWidth  - 0.5) * 30;
+    ty = (e.clientY / window.innerHeight - 0.5) * 20;
+    if (raf === null) raf = requestAnimationFrame(tick);
+  }, { passive: true });
+
+  reduce.addEventListener('change', function (e) {
+    if (e.matches) {
+      root.style.setProperty('--px', '0px');
+      root.style.setProperty('--py', '0px');
+    }
+  });
+})();
+</script>
+
+<script>
+/* ---------------------------------------------------------------------------
+   Live flow field, ported from the generative concept and re-inked for paper.
+   Hand rolled Perlin noise, no libraries. Strokes are laid down in multiply so
+   they read as ink soaking into the stock rather than light added to a screen.
+   The poster's colour planes sit above this and stay fully opaque, so nothing
+   the field can draw ever touches legibility.
+--------------------------------------------------------------------------- */
+(function () {
+  "use strict";
+
+  var canvas = document.getElementById("fieldcanvas");
+  if (!canvas) return;
+  var ctx = canvas.getContext("2d", { alpha: false });
+  if (!ctx) return;
+
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+  var fine = window.matchMedia("(hover: hover) and (pointer: fine)");
+
+  var cs = getComputedStyle(document.documentElement);
+  function token(n) { return cs.getPropertyValue(n).trim(); }
+  function rgb(hex) {
+    var h = hex.replace("#", "");
+    if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+  }
+
+  var PAPER     = rgb(token("--c-paper")     || "#F4F1E8");
+  var INK       = rgb(token("--c-ink")       || "#0E0E0C");
+  var VERMILION = rgb(token("--c-vermilion") || "#F03D14");
+  var COBALT    = rgb(token("--c-cobalt")    || "#0F2CC7");
+  var CHROME    = rgb(token("--c-chrome")    || "#FFC400");
+
+  /* weighted so graphite and cobalt carry the field and the poster's own
+     signal colours appear only as sparks, never competing with the type */
+  var RAMP = [
+    INK, INK, INK, INK, INK,
+    COBALT, COBALT, COBALT,
+    CHROME,
+    VERMILION
+  ];
+  var ALPHA = [0.13, 0.13, 0.13, 0.13, 0.13, 0.15, 0.15, 0.15, 0.17, 0.16];
+  var STROKES = RAMP.map(function (c, i) {
+    return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + ALPHA[i] + ")";
+  });
+  var FADE  = "rgba(" + PAPER[0] + "," + PAPER[1] + "," + PAPER[2] + ",0.0055)";
+  var CLEAR = "rgb("  + PAPER[0] + "," + PAPER[1] + "," + PAPER[2] + ")";
+
+  function makeNoise(seed) {
+    var perm = new Uint8Array(256), p = new Uint8Array(512), i, j, t;
+    for (i = 0; i < 256; i++) perm[i] = i;
+    var s = seed >>> 0;
+    for (i = 255; i > 0; i--) {
+      s = (s * 1664525 + 1013904223) >>> 0;
+      j = (s / 4294967296 * (i + 1)) | 0;
+      t = perm[i]; perm[i] = perm[j]; perm[j] = t;
+    }
+    for (i = 0; i < 512; i++) p[i] = perm[i & 255];
+    function fade(a) { return a * a * a * (a * (a * 6 - 15) + 10); }
+    function lerp(a, b, k) { return a + k * (b - a); }
+    function grad(h, x, y, z) {
+      switch (h & 15) {
+        case 0: return x + y;   case 1: return -x + y;  case 2: return x - y;   case 3: return -x - y;
+        case 4: return x + z;   case 5: return -x + z;  case 6: return x - z;   case 7: return -x - z;
+        case 8: return y + z;   case 9: return -y + z;  case 10: return y - z;  case 11: return -y - z;
+        case 12: return y + x;  case 13: return -y + z; case 14: return y - x;  default: return -y - z;
+      }
+    }
+    return function (x, y, z) {
+      var X = Math.floor(x) & 255, Y = Math.floor(y) & 255, Z = Math.floor(z) & 255;
+      x -= Math.floor(x); y -= Math.floor(y); z -= Math.floor(z);
+      var u = fade(x), v = fade(y), w = fade(z);
+      var A = p[X] + Y, AA = p[A] + Z, AB = p[A + 1] + Z;
+      var B = p[X + 1] + Y, BA = p[B] + Z, BB = p[B + 1] + Z;
+      return lerp(
+        lerp(
+          lerp(grad(p[AA], x, y, z), grad(p[BA], x - 1, y, z), u),
+          lerp(grad(p[AB], x, y - 1, z), grad(p[BB], x - 1, y - 1, z), u), v),
+        lerp(
+          lerp(grad(p[AA + 1], x, y, z - 1), grad(p[BA + 1], x - 1, y, z - 1), u),
+          lerp(grad(p[AB + 1], x, y - 1, z - 1), grad(p[BB + 1], x - 1, y - 1, z - 1), u), v),
+        w);
+    };
+  }
+
+  var seed = (Math.random() * 0xffff) | 0;
+  var noise = makeNoise(seed);
+
+  var W = 0, H = 0, dpr = 1, N = 0, tz = 0;
+  var px, py, cx, cy, life, span, tint;
+  var buckets = [];
+  var mx = -9999, my = -9999, tmx = -9999, tmy = -9999, pointerLive = false;
+  var running = false, rafId = 0, visible = true, onScreen = true;
+
+  function agentCount() {
+    var n = Math.round(W * H / 1800);
+    var cores = navigator.hardwareConcurrency || 4;
+    if (cores <= 4) n = Math.round(n * 0.6);
+    if (W < 768) n = Math.round(n * 0.55);
+    return Math.max(240, Math.min(1100, n));
+  }
+
+  function spawn(i, stagger) {
+    var x = 0, y = 0;
+    for (var t = 0; t < 4; t++) {
+      x = Math.random() * W;
+      y = Math.random() * H;
+      if (noise(x * 0.0013 - 200, y * 0.0013 + 120, 3.3) > 0.16) break;
+    }
+    cx[i] = x; cy[i] = y; px[i] = x; py[i] = y;
+    span[i] = 140 + Math.random() * 320;
+    life[i] = stagger ? Math.random() * span[i] : 0;
+    var n = noise(cx[i] * 0.0022 + 90, cy[i] * 0.0022 - 40, 11.7) * 1.35 + 0.5;
+    n = Math.min(0.999, Math.max(0, n));
+    tint[i] = Math.min(RAMP.length - 1, (n * RAMP.length) | 0);
+  }
+
+  function allocate() {
+    N = agentCount();
+    px = new Float32Array(N); py = new Float32Array(N);
+    cx = new Float32Array(N); cy = new Float32Array(N);
+    life = new Float32Array(N); span = new Float32Array(N);
+    tint = new Uint8Array(N);
+    for (var i = 0; i < N; i++) spawn(i, true);
+    buckets = RAMP.map(function () { return []; });
+  }
+
+  function resize() {
+    var w = window.innerWidth, h = window.innerHeight;
+    dpr = Math.min(window.devicePixelRatio || 1, w < 640 ? 1.5 : 2);
+    W = w; H = h;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    canvas.style.width = w + "px";
+    canvas.style.height = h + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.lineCap = "round";
+    ctx.fillStyle = CLEAR;
+    ctx.fillRect(0, 0, W, H);
+    allocate();
+    warm(reduced.matches ? 1000 : 700);
+  }
+
+  function step() {
+    var i, a, n1, n2, dx, dy, d2, r = 240, r2 = r * r, sp, f, b, seg, L, k;
+    for (i = 0; i < RAMP.length; i++) buckets[i].length = 0;
+
+    for (i = 0; i < N; i++) {
+      n1 = noise(cx[i] * 0.0011, cy[i] * 0.0011, tz);
+      n2 = noise(cx[i] * 0.0042 + 31, cy[i] * 0.0042 - 17, tz * 1.9 + 5);
+      a = (n1 * 1.15 + n2 * 0.22) * Math.PI;
+      sp = 0.85;
+
+      if (pointerLive) {
+        dx = cx[i] - mx; dy = cy[i] - my;
+        d2 = dx * dx + dy * dy;
+        if (d2 < r2) {
+          f = 1 - Math.sqrt(d2) / r;
+          a += f * f * 1.35;
+          sp += f * f * 0.45;
+        }
+      }
+
+      px[i] = cx[i]; py[i] = cy[i];
+      cx[i] += Math.cos(a) * sp;
+      cy[i] += Math.sin(a) * sp;
+      life[i] += 1;
+
+      if (life[i] > span[i] || cx[i] < -20 || cx[i] > W + 20 || cy[i] < -20 || cy[i] > H + 20) {
+        spawn(i, false);
+        continue;
+      }
+      b = buckets[tint[i]];
+      b.push(px[i], py[i], cx[i], cy[i]);
+    }
+
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = FADE;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.globalCompositeOperation = "multiply";
+    for (i = 0; i < RAMP.length; i++) {
+      seg = buckets[i]; L = seg.length;
+      if (!L) continue;
+      ctx.strokeStyle = STROKES[i];
+      ctx.lineWidth = 0.65 + i * 0.05;
+      ctx.beginPath();
+      for (k = 0; k < L; k += 4) {
+        ctx.moveTo(seg[k], seg[k + 1]);
+        ctx.lineTo(seg[k + 2], seg[k + 3]);
+      }
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = "source-over";
+    tz += 0.00045;
+  }
+
+  function warm(n) {
+    var saved = pointerLive;
+    pointerLive = false;
+    for (var i = 0; i < n; i++) step();
+    pointerLive = saved;
+  }
+
+  function tick() {
+    if (!running) return;
+    if (pointerLive) {
+      mx += (tmx - mx) * 0.06;
+      my += (tmy - my) * 0.06;
+    }
+    step();
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function start() { if (running || reduced.matches) return; running = true; rafId = requestAnimationFrame(tick); }
+  function stop()  { running = false; if (rafId) cancelAnimationFrame(rafId); rafId = 0; }
+  function sync()  { if (visible && onScreen) start(); else stop(); }
+
+  if (fine.matches) {
+    window.addEventListener("pointermove", function (e) {
+      if (e.pointerType !== "mouse") return;
+      tmx = e.clientX; tmy = e.clientY;
+      if (!pointerLive) { mx = tmx; my = tmy; pointerLive = true; }
+    }, { passive: true });
+    window.addEventListener("pointerleave", function () { pointerLive = false; }, { passive: true });
+  }
+
+  document.addEventListener("visibilitychange", function () { visible = !document.hidden; sync(); });
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (e) { onScreen = e[0].isIntersecting; sync(); }, { threshold: 0 }).observe(canvas);
+  }
+
+  var rt = 0;
+  function onResize() {
+    clearTimeout(rt);
+    rt = setTimeout(function () { stop(); resize(); if (!reduced.matches) sync(); }, 160);
+  }
+  window.addEventListener("resize", onResize);
+  window.addEventListener("orientationchange", onResize);
+  reduced.addEventListener("change", function () { stop(); resize(); if (!reduced.matches) sync(); });
+
+  resize();
+  if (!reduced.matches) sync();
+})();
+</script>
+
+</body>
+</html>
