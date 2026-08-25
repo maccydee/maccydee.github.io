@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <!-- DESIGN PLAN  ============================================================
-  CONCEPT NAME: Kinetic Swiss Poster, live field
+  CONCEPT NAME: Kinetic Swiss Poster, live field, Signal colourway
   A hybrid. The poster, its ink set, its composition and its choreography are
   the Kinetic concept. The static printed grid behind it has been replaced by
   the Generative concept's hand rolled Perlin flow field, re-inked for paper:
@@ -12,20 +12,20 @@
   the poster's own signal colours are never out-shouted by the background.
   The pointer bends the field into a soft vortex within 240px.
 
-  PALETTE (printed-poster ink set, 5 colours, no more):
-    paper     #F4F1E8  off-white stock, slightly warm, never pure white
-    ink       #0E0E0C  near-black, avoids #000 blooming
-    vermilion #F03D14  hot orange-red, the signal colour
-    cobalt    #0F2CC7  deep saturated blue, the weight
-    chrome    #FFC400  chrome yellow, the accent that only appears twice
+  PALETTE (monochrome with one red, the austere option, 5 colours, no more):
+    paper     #F2F1ED  ground stock
+    ink       #0D0D0D  text and rules
+    hot       #E63329  link 02 band, always carries ink text
+    deep      #1A1A1A  link 01 band, always carries paper text
+    bright    #C9C4B6  disc, arc and the link 02 hover wipe
 
     Contrast pairs, all measured (WCAG ratio):
-      ink on paper        16.9 : 1
-      ink on vermilion     4.98: 1   (all vermilion text is ink, never paper)
-      paper on cobalt      8.29: 1   (all cobalt text is paper, never ink)
-      ink on chrome       12.2 : 1
-      paper on ink        16.9 : 1   (link A hover wipe)
-    Deliberately UNUSED because it fails: paper on vermilion (3.40:1).
+      ink on paper           17.20 : 1
+      ink on hot band         4.51 : 1
+      paper on deep band     15.40 : 1
+      ink on bright wipe     11.16 : 1
+    Every pair the CSS can actually produce, resting and hovered,
+    clears AA. Colourway: Signal.
 
   TYPEFACES:
     display: Archivo variable, wght 800-900, wdth 108-118, tracking -0.045em.
@@ -112,13 +112,13 @@
     color-scheme: only light;
 
     /* ink set */
-    --c-paper:     #F4F1E8;
-    --c-ink:       #0E0E0C;
-    --c-vermilion: #F03D14;
-    --c-cobalt:    #0F2CC7;
-    --c-chrome:    #FFC400;
-    --c-mesh:      rgba(14, 14, 12, 0.13);
-    --c-mesh-lite: rgba(244, 241, 232, 0.34);
+    --c-paper:     #F2F1ED;
+    --c-ink:       #0D0D0D;
+    --c-vermilion: #E63329;
+    --c-cobalt:    #1A1A1A;
+    --c-chrome:    #C9C4B6;
+    --c-mesh:      rgba(13, 13, 13, 0.13);
+    --c-mesh-lite: rgba(242, 241, 237, 0.34);
 
     /* type roles */
     --font-display: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
