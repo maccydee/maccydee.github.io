@@ -871,7 +871,7 @@
     CHROME,
     VERMILION
   ];
-  var ALPHA = [0.083, 0.083, 0.083, 0.083, 0.083, 0.094, 0.094, 0.094, 0.106, 0.106];
+  var ALPHA = [0.24, 0.24, 0.24, 0.24, 0.24, 0.252, 0.252, 0.252, 0.264, 0.264];
   var STROKES = RAMP.map(function (c, i) {
     return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + ALPHA[i] + ")";
   });
@@ -918,18 +918,20 @@
   var seed = (Math.random() * 0xffff) | 0;
   var noise = makeNoise(seed);
 
+  var TRAIL = 95;                     /* positions kept per agent */
   var W = 0, H = 0, dpr = 1, N = 0, tz = 0, SPEED = 1.35;
+  var trail, tlen;
   var px, py, cx, cy, life, span, tint;
   var buckets = [];
   var mx = -9999, my = -9999, tmx = -9999, tmy = -9999, pointerLive = false;
   var running = false, rafId = 0, visible = true, onScreen = true;
 
   function agentCount() {
-    var n = Math.round(W * H / 1800);
+    var n = Math.round(W * H / 4200);
     var cores = navigator.hardwareConcurrency || 4;
     if (cores <= 4) n = Math.round(n * 0.6);
     if (W < 768) n = Math.round(n * 0.55);
-    return Math.max(240, Math.min(1100, n));
+    return Math.max(130, Math.min(380, n));
   }
 
   function spawn(i, stagger) {
@@ -941,6 +943,7 @@
     }
     cx[i] = x; cy[i] = y; px[i] = x; py[i] = y;
     span[i] = 110 + Math.random() * 260;
+    if (tlen) tlen[i] = 0;
     life[i] = stagger ? Math.random() * span[i] : 0;
     var n = noise(cx[i] * 0.0022 + 90, cy[i] * 0.0022 - 40, 11.7) * 1.35 + 0.5;
     n = Math.min(0.999, Math.max(0, n));
@@ -953,6 +956,8 @@
     cx = new Float32Array(N); cy = new Float32Array(N);
     life = new Float32Array(N); span = new Float32Array(N);
     tint = new Uint8Array(N);
+    trail = new Float32Array(N * TRAIL * 2);
+    tlen = new Uint8Array(N);
     for (var i = 0; i < N; i++) spawn(i, true);
     buckets = RAMP.map(function () { return []; });
   }
@@ -969,15 +974,19 @@
     /* ~0.16% of viewport width per frame at every size */
     SPEED = Math.max(0.5, Math.min(3.4, W / 620));
     ctx.lineCap = "round";
+    ctx.lineJoin = "round";
     ctx.fillStyle = CLEAR;
     ctx.fillRect(0, 0, W, H);
     allocate();
-    warm(reduced.matches ? 1000 : 700);
+    /* just enough steps to grow a full trail behind every agent */
+    warm(TRAIL + 4);
+    render();
   }
 
+  /* advance every agent one step and push its new position onto its own trail.
+     Nothing is drawn here, so the canvas never accumulates. */
   function step() {
-    var i, a, n1, n2, dx, dy, d2, r = 240, r2 = r * r, sp, f, b, seg, L, k;
-    for (i = 0; i < RAMP.length; i++) buckets[i].length = 0;
+    var i, a, n1, n2, dx, dy, d2, r = 240, r2 = r * r, sp, f, base, n;
 
     for (i = 0; i < N; i++) {
       n1 = noise(cx[i] * 0.0011, cy[i] * 0.0011, tz);
@@ -995,7 +1004,6 @@
         }
       }
 
-      px[i] = cx[i]; py[i] = cy[i];
       cx[i] += Math.cos(a) * sp;
       cy[i] += Math.sin(a) * sp;
       life[i] += 1;
@@ -1004,29 +1012,52 @@
         spawn(i, false);
         continue;
       }
-      b = buckets[tint[i]];
-      b.push(px[i], py[i], cx[i], cy[i]);
-    }
 
+      /* ring buffer of the last TRAIL positions */
+      base = i * TRAIL * 2;
+      n = tlen[i];
+      if (n < TRAIL) {
+        trail[base + n * 2] = cx[i];
+        trail[base + n * 2 + 1] = cy[i];
+        tlen[i] = n + 1;
+      } else {
+        /* shift by one, cheap at this trail length and keeps drawing order simple */
+        trail.copyWithin(base, base + 2, base + TRAIL * 2);
+        trail[base + (TRAIL - 1) * 2] = cx[i];
+        trail[base + (TRAIL - 1) * 2 + 1] = cy[i];
+      }
+    }
+    tz += 0.0011;
+  }
+
+  /* clear to bare stock, then draw each agent's trail as one polyline.
+     Density is therefore fixed forever: what you see is exactly N lines. */
+  function render() {
+    var i, k, base, n, t;
     ctx.globalCompositeOperation = "source-over";
-    ctx.fillStyle = FADE;
+    ctx.fillStyle = CLEAR;
     ctx.fillRect(0, 0, W, H);
 
+    for (i = 0; i < RAMP.length; i++) buckets[i].length = 0;
+    for (i = 0; i < N; i++) if (tlen[i] > 1) buckets[tint[i]].push(i);
+
     ctx.globalCompositeOperation = "lighter";
-    for (i = 0; i < RAMP.length; i++) {
-      seg = buckets[i]; L = seg.length;
-      if (!L) continue;
-      ctx.strokeStyle = STROKES[i];
-      ctx.lineWidth = 0.65 + i * 0.05;
+    for (t = 0; t < RAMP.length; t++) {
+      var group = buckets[t], G = group.length;
+      if (!G) continue;
+      ctx.strokeStyle = STROKES[t];
+      ctx.lineWidth = 0.7 + t * 0.05;
       ctx.beginPath();
-      for (k = 0; k < L; k += 4) {
-        ctx.moveTo(seg[k], seg[k + 1]);
-        ctx.lineTo(seg[k + 2], seg[k + 3]);
+      for (k = 0; k < G; k++) {
+        i = group[k];
+        base = i * TRAIL * 2;
+        n = tlen[i];
+        ctx.moveTo(trail[base], trail[base + 1]);
+        for (var j = 1; j < n; j++) ctx.lineTo(trail[base + j * 2], trail[base + j * 2 + 1]);
       }
       ctx.stroke();
     }
     ctx.globalCompositeOperation = "source-over";
-    tz += 0.0011;
   }
 
   function warm(n) {
@@ -1043,6 +1074,7 @@
       my += (tmy - my) * 0.06;
     }
     step();
+    render();
     rafId = requestAnimationFrame(tick);
   }
 
