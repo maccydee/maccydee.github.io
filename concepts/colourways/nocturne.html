@@ -687,6 +687,16 @@
   margin-left: calc(var(--s-2) * -1);
   margin-right: calc(var(--s-2) * -1);
 }
+
+/* A short window (a laptop with browser chrome, or a small app window) pushed
+   the colophon below the fold and made a full-viewport poster scroll. Tighten
+   the vertical rhythm rather than let the composition break its own frame. */
+@media (max-height: 780px) {
+  .poster { padding-block: var(--s-3) var(--s-3); row-gap: var(--s-3); }
+  .meta   { margin-bottom: var(--s-2); }
+  .lede   { padding-top: 2px; padding-bottom: 2px; }
+  .link   { padding-top: var(--s-2); padding-bottom: var(--s-2); }
+}
 </style>
 
 <style>
@@ -908,7 +918,7 @@
   var seed = (Math.random() * 0xffff) | 0;
   var noise = makeNoise(seed);
 
-  var W = 0, H = 0, dpr = 1, N = 0, tz = 0;
+  var W = 0, H = 0, dpr = 1, N = 0, tz = 0, SPEED = 1.35;
   var px, py, cx, cy, life, span, tint;
   var buckets = [];
   var mx = -9999, my = -9999, tmx = -9999, tmy = -9999, pointerLive = false;
@@ -956,6 +966,8 @@
     canvas.style.width = w + "px";
     canvas.style.height = h + "px";
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    /* ~0.16% of viewport width per frame at every size */
+    SPEED = Math.max(0.5, Math.min(3.4, W / 620));
     ctx.lineCap = "round";
     ctx.fillStyle = CLEAR;
     ctx.fillRect(0, 0, W, H);
@@ -971,7 +983,7 @@
       n1 = noise(cx[i] * 0.0011, cy[i] * 0.0011, tz);
       n2 = noise(cx[i] * 0.0042 + 31, cy[i] * 0.0042 - 17, tz * 1.9 + 5);
       a = (n1 * 1.15 + n2 * 0.22) * Math.PI;
-      sp = 1.35;
+      sp = SPEED;
 
       if (pointerLive) {
         dx = cx[i] - mx; dy = cy[i] - my;
@@ -979,7 +991,7 @@
         if (d2 < r2) {
           f = 1 - Math.sqrt(d2) / r;
           a += f * f * 1.35;
-          sp += f * f * 0.45;
+          sp += f * f * SPEED * 0.33;
         }
       }
 
