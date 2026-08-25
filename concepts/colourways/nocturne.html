@@ -71,8 +71,8 @@
     masthead meta row are 12 to 20px and would not, so each sits on its own
     opaque paper ground. Second risk: a flow field on paper turns to fuzz if
     it is too dense. Mitigated by a raised density threshold so the field
-    breaks into ribbons with real voids, alpha at 0.13 to 0.17, and a slow
-    wash back to paper. Third: performance. The loop is capped at 1100 agents,
+    breaks into ribbons with real voids, alpha at 0.15 to 0.20, and a
+    faster wash back to paper. Third: performance. The loop is capped at 1100 agents,
     scaled down on small viewports and low core counts, paused when the tab is
     hidden or the canvas is off-screen, and prefers-reduced-motion paints one
     static frame and never starts it.
@@ -861,11 +861,11 @@
     CHROME,
     VERMILION
   ];
-  var ALPHA = [0.07, 0.07, 0.07, 0.07, 0.07, 0.08, 0.08, 0.08, 0.09, 0.09];
+  var ALPHA = [0.083, 0.083, 0.083, 0.083, 0.083, 0.094, 0.094, 0.094, 0.106, 0.106];
   var STROKES = RAMP.map(function (c, i) {
     return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + ALPHA[i] + ")";
   });
-  var FADE  = "rgba(" + PAPER[0] + "," + PAPER[1] + "," + PAPER[2] + ",0.0055)";
+  var FADE  = "rgba(" + PAPER[0] + "," + PAPER[1] + "," + PAPER[2] + ",0.0085)";
   var CLEAR = "rgb("  + PAPER[0] + "," + PAPER[1] + "," + PAPER[2] + ")";
 
   function makeNoise(seed) {
@@ -930,7 +930,7 @@
       if (noise(x * 0.0013 - 200, y * 0.0013 + 120, 3.3) > 0.16) break;
     }
     cx[i] = x; cy[i] = y; px[i] = x; py[i] = y;
-    span[i] = 140 + Math.random() * 320;
+    span[i] = 110 + Math.random() * 260;
     life[i] = stagger ? Math.random() * span[i] : 0;
     var n = noise(cx[i] * 0.0022 + 90, cy[i] * 0.0022 - 40, 11.7) * 1.35 + 0.5;
     n = Math.min(0.999, Math.max(0, n));
@@ -971,7 +971,7 @@
       n1 = noise(cx[i] * 0.0011, cy[i] * 0.0011, tz);
       n2 = noise(cx[i] * 0.0042 + 31, cy[i] * 0.0042 - 17, tz * 1.9 + 5);
       a = (n1 * 1.15 + n2 * 0.22) * Math.PI;
-      sp = 0.85;
+      sp = 1.35;
 
       if (pointerLive) {
         dx = cx[i] - mx; dy = cy[i] - my;
@@ -1014,7 +1014,7 @@
       ctx.stroke();
     }
     ctx.globalCompositeOperation = "source-over";
-    tz += 0.00045;
+    tz += 0.0011;
   }
 
   function warm(n) {
