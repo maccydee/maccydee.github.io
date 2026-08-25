@@ -23,7 +23,7 @@
     panel     #0C1715  plinth, one step up from ground
     panel-2   #122320  inset rows
     bone      #F4EFE4  primary text
-    bone-dim  #A7B6AE  secondary text  (10.1:1 on panel)
+    bone-dim  #A7B6AE  secondary text  (8.7:1 on panel, measured)
     hairline  #24352F
     ramp, shared by canvas and UI:
       deep    #0E6E7A  teal        (hue 187)
@@ -133,6 +133,7 @@
     --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
 
     --scrim: color-mix(in srgb, var(--ink) 50%, transparent);
+    --halftone: rgb(0 0 0 / 0.22);
     --plate: color-mix(in srgb, var(--flare) 26%, transparent);
     --shadow-plinth: 0 24px 64px rgb(0 0 0 / 0.55);
   }
@@ -179,11 +180,11 @@
     pointer-events: none;
     opacity: 0.32;
     background-image:
-      radial-gradient(105% 88% at 68% 44%, rgb(0 0 0 / 0) 10%, var(--scrim) 100%),
+      radial-gradient(105% 88% at 68% 44%, transparent 10%, var(--scrim) 100%),
       repeating-linear-gradient(
         to bottom,
-        rgb(0 0 0 / 0.22) 0 1px,
-        rgb(0 0 0 / 0) 1px 3px
+        var(--halftone) 0 1px,
+        transparent 1px 3px
       );
   }
   .shell {

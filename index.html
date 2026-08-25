@@ -1,3 +1,6 @@
+<!doctype html>
+<html lang="en">
+<head>
 <!-- DESIGN PLAN  ============================================================
   CONCEPT NAME: Kinetic Swiss Poster, live field
   A hybrid. The poster, its ink set, its composition and its choreography are
@@ -306,8 +309,7 @@
     row-gap: clamp(var(--s-4), 4vh, var(--s-6));
     min-height: 100vh;
     min-height: 100svh;
-    padding: var(--s-5) var(--s-4) var(--s-4);
-    overflow: hidden;
+    padding: var(--s-5) var(--s-4) var(--s-5);
   }
 
   .poster > *:not(.field) { position: relative; z-index: 1; }
@@ -431,9 +433,7 @@
     grid-column: 1 / -1;
     padding: var(--s-4) var(--s-3);
     border: var(--rule) solid var(--c-ink);
-    transition:
-      transform var(--dur-fast) var(--ease),
-      box-shadow var(--dur-fast) var(--ease);
+    transition: transform var(--dur-fast) var(--ease);
   }
   @media (min-width: 768px) {
     .link { padding: var(--s-3) var(--s-4); column-gap: var(--s-5); }
@@ -657,7 +657,6 @@
   }
 }
 </style>
-
 <style>
 /* ---------------------------------------------------------------------------
    Small type sits on printed paper, never straight on the live field. The
@@ -688,6 +687,8 @@
   margin-right: calc(var(--s-2) * -1);
 }
 </style>
+</head>
+<body>
 
 <canvas id="fieldcanvas" class="fieldcanvas" aria-hidden="true"></canvas>
 
@@ -1050,3 +1051,6 @@
   if (!reduced.matches) sync();
 })();
 </script>
+
+</body>
+</html>
