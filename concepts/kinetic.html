@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- DESIGN PLAN  ============================================================
+  CONCEPT NAME: Kinetic Swiss Poster
+
+  PALETTE (printed-poster ink set, 5 colours, no more):
+    paper     #F4F1E8  off-white stock, slightly warm, never pure white
+    ink       #0E0E0C  near-black, avoids #000 blooming
+    vermilion #F03D14  hot orange-red, the signal colour
+    cobalt    #0F2CC7  deep saturated blue, the weight
+    chrome    #FFC400  chrome yellow, the accent that only appears twice
+
+    Contrast pairs, all measured (WCAG ratio):
+      ink on paper        16.9 : 1
+      ink on vermilion     4.98: 1   (all vermilion text is ink, never paper)
+      paper on cobalt      8.29: 1   (all cobalt text is paper, never ink)
+      ink on chrome       12.2 : 1
+      paper on ink        16.9 : 1   (link A hover wipe)
+    Deliberately UNUSED because it fails: paper on vermilion (3.40:1).
+
+  TYPEFACES:
+    display: Archivo variable, wght 800-900, wdth 108-118, tracking -0.045em.
+             A neo-grotesque with a real width axis, so the huge type is
+             genuinely widened rather than stretched.
+    label:   Space Mono 400/700, uppercase, +0.16em tracking, tabular figures.
+             Mono against a heavy grotesque is real contrast, not two sans.
+    Deliberately not Inter, anywhere.
+
+  LAYOUT CONCEPT:
+    One full-viewport poster on a 12-column field with a -14deg secondary
+    grid laid over it. Composition reads top-left to bottom-right:
+    meta rule, CALLUM in ink, MCDONALD reversed out of a vermilion block,
+    a short lede in a 5-column measure, then the two links as two enormous
+    staggered bands (A spans 1/12, B spans 2/13) so the offset notch lets a
+    chrome disc show through. Negative space carries the middle third.
+    The two-link problem is solved by scale, not padding: each link is a
+    poster element in its own right, indexed 01/02, with its own colour
+    identity and its own recomposition of the background planes.
+
+  MOTION:
+    Entry is pure CSS, staggered 0 -> 440ms, each step 460ms, last frame at
+    900ms. Expo-out easing cubic-bezier(0.16,1,0.3,1): fast departure, long
+    settle, zero overshoot. Only transform and opacity move, ever.
+    animation-fill-mode is BACKWARDS, so the base rule is already the final
+    composition. No JS is involved in the entry: if scripting fails the page
+    still animates; if CSS animation fails the page is simply finished.
+    Pointer parallax is the only JS, driven through --px/--py which default
+    to 0px, so no-JS renders the neutral composition.
+    prefers-reduced-motion kills every animation and transition outright.
+
+  THEME:
+    COMMITTED, NOT REMAPPED. This is a printed poster: it has one colourway
+    and paints an explicit paper background on html and body, with
+    color-scheme: only light so no UA dark treatment can bleed through.
+    A dark remap is deliberately not provided because inverting an
+    International Style poster destroys the figure/ground relationship the
+    whole composition is built on.
+
+  AESTHETIC RISK:
+    Committing the entire lower half of the poster to two link bands means
+    if the bands do not read as pressable, the page reads as decoration with
+    no exit. Mitigation: each band carries four independent affordance
+    signals at once, a 3px ink rule, an index numeral, a diagonal arrow that
+    travels on hover, and a full-width colour wipe on hover/focus. Secondary
+    risk: vermilion at 4.98:1 with ink clears AA but with little headroom, so
+    ink is the only colour ever set on vermilion, anywhere on the page.
+============================================================================ -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Callum McDonald</title>
+<meta name="description" content="Callum McDonald. Engineering Manager. Security detection, vulnerability management and AI enablement.">
+<meta name="color-scheme" content="light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+@layer reset, tokens, base, field, poster, components, motion, utilities;
+
+/* ---------------------------------------------------------------- reset */
+@layer reset {
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  svg, img { display: block; max-width: 100%; }
+  a { color: inherit; text-decoration: none; }
+  h1, h2, p { text-wrap: pretty; }
+}
+
+/* --------------------------------------------------------------- tokens */
+@layer tokens {
+  :root {
+    color-scheme: only light;
+
+    /* ink set */
+    --c-paper:     #F4F1E8;
+    --c-ink:       #0E0E0C;
+    --c-vermilion: #F03D14;
+    --c-cobalt:    #0F2CC7;
+    --c-chrome:    #FFC400;
+    --c-mesh:      rgba(14, 14, 12, 0.13);
+    --c-mesh-lite: rgba(244, 241, 232, 0.34);
+
+    /* type roles */
+    --font-display: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-label:   "Space Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+    /* major third scale, 16px base */
+    --t-xs:   0.75rem;    /* 12 */
+    --t-sm:   0.875rem;   /* 14 */
+    --t-base: 1rem;       /* 16 */
+    --t-lg:   1.25rem;    /* 20 */
+    --t-xl:   1.5625rem;  /* 25 */
+    --t-2xl:  1.9375rem;  /* 31 */
+    --t-3xl:  2.4375rem;  /* 39 */
+    --t-4xl:  3.0625rem;  /* 49 */
+    --t-5xl:  3.8125rem;  /* 61 */
+    --t-6xl:  4.75rem;    /* 76 */
+    --t-7xl:  5.9375rem;  /* 95 */
+    --t-8xl:  7.4375rem;  /* 119 */
+    --t-9xl:  9.3125rem;  /* 149 */
+
+    /* 8px spacing scale */
+    --s-1: 4px;  --s-2: 8px;  --s-3: 16px; --s-4: 24px;
+    --s-5: 32px; --s-6: 48px; --s-7: 64px; --s-8: 96px;
+
+    /* structure */
+    --rule:  3px;
+    --tilt:  -14deg;
+
+    /* motion */
+    --dur:      460ms;
+    --dur-fast: 300ms;
+    --ease:     cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* parallax, overwritten by JS, neutral without it */
+    --px: 0px;
+    --py: 0px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root { --dur: 0.01ms; --dur-fast: 0.01ms; }
+  }
+}
+
+/* ----------------------------------------------------------------- base */
+@layer base {
+  html { background: var(--c-paper); }
+
+  body {
+    background: var(--c-paper);
+    color: var(--c-ink);
+    font-family: var(--font-display);
+    font-size: var(--t-base);
+    font-variation-settings: "wdth" 100, "wght" 450;
+    line-height: 1.5;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  :focus-visible {
+    outline: var(--rule) solid var(--c-ink);
+    outline-offset: 5px;
+  }
+
+  ::selection { background: var(--c-chrome); color: var(--c-ink); }
+
+  .num { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+}
+
+/* -------------------------------------------------- field: colour planes */
+@layer field {
+  .field {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .plane {
+    position: absolute;
+    transform:
+      translate3d(calc(var(--px) * var(--depth, 1)), calc(var(--py) * var(--depth, 1)), 0)
+      rotate(var(--rot, 0deg));
+    will-change: transform;
+  }
+
+  .plane__fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--fill, transparent);
+    transform: none;
+    transition: transform var(--dur) var(--ease);
+  }
+
+  /* cobalt slab, top right, bleeds off two edges */
+  .plane--cobalt {
+    --rot: var(--tilt);
+    --depth: -1.6;
+    --fill: var(--c-cobalt);
+    top: 13%;
+    right: -13%;
+    width: 45%;
+    height: 55%;
+  }
+
+  /* vermilion hairbar cutting the whole field on the secondary grid */
+  .plane--bar {
+    --rot: var(--tilt);
+    --depth: 2.4;
+    --fill: var(--c-vermilion);
+    top: -40%;
+    left: 22%;
+    width: 12px;
+    height: 190%;
+  }
+
+  /* second, thinner ink bar, offset, to make the diagonal grid read */
+  .plane--bar2 {
+    --rot: var(--tilt);
+    --depth: 1.5;
+    --fill: var(--c-ink);
+    top: -40%;
+    left: 30.5%;
+    width: var(--rule);
+    height: 190%;
+  }
+
+  /* chrome disc, peeks through the notch between the two link bands */
+  .plane--disc {
+    --depth: -2.8;
+    right: 2%;
+    bottom: 16%;
+    width: clamp(140px, 27vmin, 300px);
+    aspect-ratio: 1;
+  }
+  .plane--disc .plane__fill {
+    background: var(--c-chrome);
+    border-radius: 50%;
+  }
+
+  /* concentric arcs, Muller-Brockmann geometry, sits on the cobalt slab */
+  .plane--arcs {
+    --rot: var(--tilt);
+    --depth: -2.2;
+    top: 3%;
+    right: -9%;
+    width: 37%;
+    aspect-ratio: 1;
+  }
+  .arcs { width: 100%; height: 100%; }
+  .arcs circle { fill: none; stroke: var(--c-mesh-lite); stroke-width: 1.5; }
+  .arcs .arcs__hot { stroke: var(--c-chrome); stroke-width: 4; }
+
+  /* the -14deg hairline grid over everything */
+  /* Narrow screens: every plane is pushed into the right margin so the
+     measured text column below never sits on a saturated fill. */
+  @media (max-width: 899px) {
+    .plane--bar  { left: 84%; width: 8px; }
+    .plane--bar2 { left: 93%; }
+    .plane--cobalt { top: 10%; right: -32%; width: 62%; height: 26%; }
+    .plane--arcs   { top: 3%; right: -24%; width: 54%; }
+  }
+
+  .mesh {
+    position: absolute;
+    inset: -30%;
+    width: 160%;
+    height: 160%;
+    opacity: 1;
+  }
+  .mesh path { stroke: var(--c-mesh); stroke-width: 1; fill: none; }
+}
+
+/* --------------------------------------------------------------- poster */
+@layer poster {
+  .poster {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    column-gap: var(--s-3);
+    align-content: space-between;
+    row-gap: clamp(var(--s-4), 4vh, var(--s-6));
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: var(--s-5) var(--s-4) var(--s-5);
+  }
+
+  .poster > *:not(.field) { position: relative; z-index: 1; }
+
+  @media (min-width: 768px) {
+    .poster { padding: var(--s-5) var(--s-6) var(--s-4); }
+  }
+  @media (min-width: 1100px) {
+    .poster { padding: var(--s-5) var(--s-7) var(--s-5); }
+  }
+
+  .masthead { grid-column: 1 / -1; }
+
+  /* meta rule -------------------------------------------------------- */
+  .meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-3);
+    border-top: var(--rule) solid var(--c-ink);
+    padding-top: var(--s-2);
+    margin-bottom: clamp(var(--s-3), 4vh, var(--s-5));
+  }
+  @media (min-width: 900px) {
+    .meta { max-width: 60%; }
+  }
+  .meta span {
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  /* name ------------------------------------------------------------- */
+  .name {
+    font-size: clamp(var(--t-3xl), min(11.2vw, 13.4vh), var(--t-9xl));
+    font-variation-settings: "wdth" 112, "wght" 900;
+    line-height: 0.82;
+    letter-spacing: -0.045em;
+    text-transform: uppercase;
+  }
+
+  .name__line {
+    display: block;
+    overflow: hidden;
+    position: relative;
+  }
+  .name__line--fill {
+    width: max-content;
+    max-width: 100%;
+    padding-inline: 0.08em;
+    margin-top: 0.04em;
+  }
+  .name__bg {
+    position: absolute;
+    inset: 0;
+    background: var(--c-vermilion);
+    transform-origin: left center;
+  }
+  .name__in {
+    display: block;
+    position: relative;
+    /* trims the grotesque's leading so the vermilion block hugs the caps */
+    padding-block: 0.16em 0.1em;
+    margin-block: -0.1em -0.06em;
+  }
+
+  /* lede ------------------------------------------------------------- */
+  .lede {
+    grid-column: 1 / -1;
+    max-width: 34ch;
+    margin-top: clamp(var(--s-3), 3vh, var(--s-5));
+    font-size: clamp(var(--t-base), 1.1vw + 0.7rem, var(--t-lg));
+    font-variation-settings: "wdth" 100, "wght" 520;
+    line-height: 1.32;
+    letter-spacing: -0.012em;
+    border-left: var(--rule) solid var(--c-vermilion);
+    padding-left: var(--s-3);
+  }
+  @media (max-width: 899px) {
+    .lede { max-width: 23ch; }
+  }
+  @media (min-width: 900px) {
+    .lede {
+      margin-left: 32%;
+      max-width: 30ch;
+    }
+  }
+}
+
+/* ----------------------------------------------------------- components */
+@layer components {
+  .links { grid-column: 1 / -1; }
+
+  .sec {
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding-bottom: var(--s-2);
+    border-bottom: var(--rule) solid var(--c-ink);
+    margin-bottom: var(--s-3);
+  }
+
+  .link-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    column-gap: var(--s-3);
+    row-gap: var(--s-3);
+  }
+
+  .link {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--s-3);
+    grid-column: 1 / -1;
+    padding: var(--s-4) var(--s-3);
+    border: var(--rule) solid var(--c-ink);
+    transition: transform var(--dur-fast) var(--ease);
+  }
+  @media (min-width: 768px) {
+    .link { padding: var(--s-3) var(--s-4); column-gap: var(--s-5); }
+    .link--a { grid-column: 1 / 12; }
+    .link--b { grid-column: 2 / 13; }
+  }
+
+  .link--a { background: var(--c-cobalt); color: var(--c-paper); }
+  .link--b { background: var(--c-vermilion); color: var(--c-ink); }
+
+  /* the hover wipe. transform only, origin left, sits under the text. */
+  .link__wipe {
+    position: absolute;
+    inset: 0;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform var(--dur) var(--ease);
+    z-index: 0;
+  }
+  .link--a .link__wipe { background: var(--c-ink); }
+  .link--b .link__wipe { background: var(--c-chrome); }
+
+  .link > *:not(.link__wipe) { position: relative; z-index: 1; }
+
+  .link__idx {
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    align-self: start;
+    padding-top: 0.35em;
+  }
+
+  .link__body { min-width: 0; }
+
+  .link__name {
+    display: block;
+    font-size: clamp(var(--t-2xl), min(5.2vw, 4.7vh), var(--t-4xl));
+    font-variation-settings: "wdth" 108, "wght" 800;
+    line-height: 0.94;
+    letter-spacing: -0.035em;
+    text-transform: uppercase;
+  }
+  .link__handle {
+    display: block;
+    margin-top: var(--s-2);
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
+    letter-spacing: 0.06em;
+    word-break: break-word;
+  }
+  @media (min-width: 768px) {
+    .link__handle { font-size: var(--t-sm); }
+  }
+
+  .link__arrow {
+    width: clamp(30px, 6vw, 52px);
+    height: clamp(30px, 6vw, 52px);
+    flex: none;
+    overflow: visible;
+  }
+  .link__arrow g {
+    transition: transform var(--dur-fast) var(--ease);
+  }
+  .link__arrow path {
+    stroke: currentColor;
+    stroke-width: 7;
+    stroke-linecap: square;
+    fill: none;
+  }
+
+  /* states ----------------------------------------------------------- */
+  .link:hover .link__wipe,
+  .link:focus-visible .link__wipe { transform: scaleX(1); }
+
+  .link:hover .link__arrow g,
+  .link:focus-visible .link__arrow g { transform: translate(12px, -12px); }
+
+  .link:hover { transform: translate3d(0, -3px, 0); }
+
+  .link:active {
+    transform: translate3d(0, 2px, 0) scale(0.995);
+    transition-duration: 90ms;
+  }
+
+  .link:focus-visible {
+    outline: var(--rule) solid var(--c-ink);
+    outline-offset: 6px;
+  }
+
+  /* hovering a link recomposes the poster behind it */
+  .poster:has(.link--a:hover) .plane--cobalt .plane__fill,
+  .poster:has(.link--a:focus-visible) .plane--cobalt .plane__fill {
+    transform: scale(1.16) translateX(-6%);
+  }
+  .poster:has(.link--a:hover) .plane--arcs .plane__fill,
+  .poster:has(.link--a:focus-visible) .plane--arcs .plane__fill {
+    transform: rotate(24deg);
+  }
+  .poster:has(.link--b:hover) .plane--disc .plane__fill,
+  .poster:has(.link--b:focus-visible) .plane--disc .plane__fill {
+    transform: scale(1.9) translate(-14%, -6%);
+  }
+  .poster:has(.link--b:hover) .plane--bar .plane__fill,
+  .poster:has(.link--b:focus-visible) .plane--bar .plane__fill {
+    transform: scaleX(4);
+  }
+
+  /* colophon --------------------------------------------------------- */
+  .colophon {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-2) var(--s-4);
+    border-top: var(--rule) solid var(--c-ink);
+    padding-top: var(--s-2);
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* desktop-only vertical spine on the left margin */
+  .spine {
+    display: none;
+    position: absolute;
+    left: 18px;
+    bottom: 128px;
+    transform: rotate(-90deg);
+    transform-origin: left bottom;
+    font-family: var(--font-label);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--c-ink);
+    opacity: 0.55;
+  }
+  @media (min-width: 1100px) {
+    .spine { display: block; }
+  }
+}
+
+/* --------------------------------------------------------------- motion */
+@layer motion {
+  /* Base rules above are ALREADY the finished composition.
+     Keyframes only describe where things come FROM, and fill-mode is
+     backwards, so nothing is ever left stuck or invisible. */
+
+  @keyframes riseIn   { from { transform: translate3d(0, 112%, 0); } }
+  @keyframes liftIn   { from { transform: translate3d(0, 26px, 0); opacity: 0; } }
+  @keyframes wipeIn   { from { transform: scaleX(0); } }
+  @keyframes slabIn   { from { transform: translate3d(0, -14%, 0) scale(0.86); opacity: 0; } }
+  @keyframes barIn    { from { transform: scaleY(0); } }
+  @keyframes discIn   { from { transform: scale(0.2); opacity: 0; } }
+  @keyframes ruleIn   { from { transform: scaleX(0); } }
+  @keyframes fadeIn   { from { opacity: 0; } }
+
+  .anim {
+    animation-duration: var(--dur);
+    animation-timing-function: var(--ease);
+    animation-fill-mode: backwards;
+    animation-delay: var(--d, 0ms);
+  }
+
+  .meta        { animation-name: liftIn; }
+  .name__in    { animation-name: riseIn; }
+  .name__bg    { animation-name: wipeIn; transform-origin: left center; }
+  .lede        { animation-name: liftIn; }
+  .sec         { animation-name: liftIn; }
+  .link        { animation-name: liftIn; }
+  .colophon    { animation-name: liftIn; }
+  .spine       { animation-name: fadeIn; }
+
+  .plane--cobalt .plane__fill,
+  .plane--arcs   .plane__fill { animation-name: slabIn; }
+  .plane--bar    .plane__fill,
+  .plane--bar2   .plane__fill { animation-name: barIn; transform-origin: top center; }
+  .plane--disc   .plane__fill { animation-name: discIn; }
+  .mesh                       { animation-name: fadeIn; }
+
+  /* stagger. last frame lands at 440 + 460 = 900ms. */
+  .mesh                       { --d: 0ms;   animation-duration: 700ms; }
+  .plane--bar   .plane__fill  { --d: 40ms; }
+  .plane--bar2  .plane__fill  { --d: 100ms; }
+  .plane--cobalt .plane__fill { --d: 0ms; }
+  .plane--arcs  .plane__fill  { --d: 140ms; }
+  .plane--disc  .plane__fill  { --d: 260ms; }
+
+  .meta            { --d: 40ms; }
+  .name__l1        { --d: 100ms; }
+  .name__bg        { --d: 180ms; }
+  .name__l2        { --d: 240ms; }
+  .lede            { --d: 300ms; }
+  .sec             { --d: 340ms; }
+  .link--a         { --d: 380ms; }
+  .link--b         { --d: 440ms; }
+  .colophon        { --d: 440ms; }
+  .spine           { --d: 440ms; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition: none !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ------------------------------------------------------------ utilities */
+@layer utilities {
+  .vh {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+</style>
+</head>
+<body>
+
+<main class="poster">
+
+  <div class="field" aria-hidden="true">
+    <svg class="mesh anim" preserveAspectRatio="none">
+      <defs>
+        <pattern id="k-grid" width="76" height="76" patternUnits="userSpaceOnUse"
+                 patternTransform="rotate(-14)">
+          <path d="M0 0 V76" />
+          <path d="M0 0 H76" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#k-grid)"></rect>
+    </svg>
+
+    <div class="plane plane--cobalt"><i class="plane__fill anim"></i></div>
+    <div class="plane plane--bar"><i class="plane__fill anim"></i></div>
+    <div class="plane plane--bar2"><i class="plane__fill anim"></i></div>
+
+    <div class="plane plane--arcs">
+      <i class="plane__fill anim">
+        <svg class="arcs" viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="26" />
+          <circle cx="100" cy="100" r="42" />
+          <circle cx="100" cy="100" r="58" />
+          <circle cx="100" cy="100" r="74" class="arcs__hot" />
+          <circle cx="100" cy="100" r="90" />
+        </svg>
+      </i>
+    </div>
+
+    <div class="plane plane--disc"><i class="plane__fill anim"></i></div>
+  </div>
+
+  <header class="masthead">
+    <div class="meta anim">
+      <span>Index</span>
+      <span class="num">2026</span>
+    </div>
+
+    <h1 class="name">
+      <span class="name__line"><span class="name__in name__l1 anim">Callum</span></span>
+      <span class="name__line name__line--fill">
+        <i class="name__bg anim" aria-hidden="true"></i>
+        <span class="name__in name__l2 anim">McDonald</span>
+      </span>
+    </h1>
+
+    <p class="lede anim">Engineering Manager. Security detection, vulnerability management and AI enablement.</p>
+  </header>
+
+  <nav class="links" aria-labelledby="find">
+    <h2 class="sec anim" id="find">Where to find me</h2>
+
+    <div class="link-grid">
+      <a class="link link--a anim" href="https://github.com/maccydee" rel="me noopener">
+        <span class="link__wipe" aria-hidden="true"></span>
+        <span class="link__idx num" aria-hidden="true">01</span>
+        <span class="link__body">
+          <span class="link__name">GitHub</span>
+          <span class="link__handle">@maccydee</span>
+        </span>
+        <svg class="link__arrow" viewBox="0 0 100 100" aria-hidden="true">
+          <g><path d="M22 78 L78 22 M40 22 H78 V60" /></g>
+        </svg>
+      </a>
+
+      <a class="link link--b anim" href="https://www.linkedin.com/in/callum-mcdonald-b416b299/" rel="me noopener">
+        <span class="link__wipe" aria-hidden="true"></span>
+        <span class="link__idx num" aria-hidden="true">02</span>
+        <span class="link__body">
+          <span class="link__name">LinkedIn</span>
+          <span class="link__handle">/in/callum-mcdonald</span>
+        </span>
+        <svg class="link__arrow" viewBox="0 0 100 100" aria-hidden="true">
+          <g><path d="M22 78 L78 22 M40 22 H78 V60" /></g>
+        </svg>
+      </a>
+    </div>
+  </nav>
+
+  <footer class="colophon anim">
+    <p>&copy; <span class="num">2026</span> Callum McDonald</p>
+    <p aria-hidden="true">Set in Archivo &amp; Space Mono</p>
+  </footer>
+
+  <p class="spine anim" aria-hidden="true">Callum McDonald</p>
+</main>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var fine   = window.matchMedia('(hover: hover) and (pointer: fine)');
+  if (reduce.matches || !fine.matches) return;
+
+  var tx = 0, ty = 0, cx = 0, cy = 0, raf = null;
+
+  function tick() {
+    cx += (tx - cx) * 0.075;
+    cy += (ty - cy) * 0.075;
+    root.style.setProperty('--px', cx.toFixed(2) + 'px');
+    root.style.setProperty('--py', cy.toFixed(2) + 'px');
+    if (Math.abs(tx - cx) > 0.06 || Math.abs(ty - cy) > 0.06) {
+      raf = requestAnimationFrame(tick);
+    } else {
+      raf = null;
+    }
+  }
+
+  window.addEventListener('pointermove', function (e) {
+    tx = (e.clientX / window.innerWidth  - 0.5) * 30;
+    ty = (e.clientY / window.innerHeight - 0.5) * 20;
+    if (raf === null) raf = requestAnimationFrame(tick);
+  }, { passive: true });
+
+  reduce.addEventListener('change', function (e) {
+    if (e.matches) {
+      root.style.setProperty('--px', '0px');
+      root.style.setProperty('--py', '0px');
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

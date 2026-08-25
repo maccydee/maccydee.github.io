@@ -1,0 +1,840 @@
+<!doctype html>
+<html lang="en">
+<!-- DESIGN PLAN
+  CONCEPT: RETRO-FUTURIST CRT TERMINAL, AMBER P3 PHOSPHOR
+    A single-monitor console that powers on: a scan line widens into a full raster,
+    three honest boot lines type themselves, and the buffer settles into a two-entry
+    link directory. Everything on screen describes THIS page. No fabricated systems,
+    scans, metrics or telemetry.
+
+  PALETTE (monochrome amber, hierarchy is luminance, exactly as a real phosphor tube):
+    bg-void        #0B0805  deep warm near-black. NOT #000: pure black blooms text.
+    bg-screen      #120C04  the raster area, one step warmer than the void
+    ink-hot        #FFF0CE  peak phosphor, reserved for the single loudest element
+    ink            #FFB000  classic amber P3, body + link labels        (10.6:1 on bg)
+    ink-dim        #D69A4A  handles, URLs, secondary console text        (7.9:1 on bg)
+    ink-ghost      #6E4E1C  gutter line numbers, rules, decoration (aria-hidden only)
+    NO second hue anywhere. A monochrome tube has one gun.
+
+  TYPEFACES (monospace throughout, contrast from two different monospaces):
+    display:  Space Mono 700 — the name. Ball terminals, wide, slightly odd.
+    body/ui:  IBM Plex Mono 400/500/600 — engineered, neutral, precise.
+    Scale: Major Third from 16px. Hero name uses clamp() pinned to scale steps.
+
+  LAYOUT CONCEPT:
+    Not a centred pill stack. A bezelled screen with a left buffer gutter that
+    numbers every block, a vertical chassis legend down the left bezel, and the two
+    destinations as full-bleed console ROWS (index numeral, drawn mark, label,
+    handle, URL, key badge, arrow), separated by a hatch rule. Two links fill the
+    page because each one is a 3-column record, not a button. Leftover height is
+    filled the way a real editor fills it, with ~ marks for unused buffer rows, so
+    short content reads as a console at rest rather than as a page that ran out.
+
+  AESTHETIC RISK:
+    Monochrome amber with scanlines, bloom and chromatic fringing risks becoming an
+    unreadable Hollywood-hacker pastiche, and the "typing" boot risks showing a
+    stranger an empty screen.
+    Mitigation: fringing is applied ONLY to the hero name, never to running text;
+    scanline overlay sits at 0.05 alpha over a 3px period; body text stays at 7.9:1
+    or better; the boot settles in ~1.2s, the name lands at ~260ms, any click or
+    keypress jumps to the finished state, and prefers-reduced-motion renders the
+    end state on the first frame with zero motion.
+
+  THEME:
+    This concept commits fully to one dark look, so the background is painted
+    explicitly on html AND body and the browser theme cannot bleed through. The
+    light-preference block is a real remap, not an inversion and not a no-op: in a
+    bright room the tube gets more beam current (hotter ink, lower overlay alpha,
+    weaker bloom). :root[data-theme="dark"] restores the night calibration.
+
+  MOTION: transform and opacity only. All of it collapses to 0.01ms under
+    prefers-reduced-motion, which also skips the power-on and the type-on.
+-->
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Callum McDonald</title>
+<meta name="description" content="Callum McDonald. Engineering Manager. Security detection, vulnerability management and AI enablement.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+@layer reset, tokens, base, chrome, components, effects, utilities;
+
+@layer reset {
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  img, svg { display: block; max-width: 100%; }
+  a { color: inherit; text-decoration: none; }
+}
+
+@layer tokens {
+  :root {
+    /* ---- surface ---- */
+    --bg-void:      #0B0805;
+    --bg-screen:    #120C04;
+    --bg-row:       rgba(255, 176, 0, 0.045);
+    --bg-row-hot:   rgba(255, 176, 0, 0.085);
+    --bg-badge:     rgba(255, 176, 0, 0.10);
+
+    /* ---- phosphor ---- */
+    --ink-hot:      #FFF0CE;
+    --ink:          #FFB000;
+    --ink-dim:      #D69A4A;
+    --ink-ghost:    #6E4E1C;
+
+    /* ---- structure ---- */
+    --rule:         rgba(255, 176, 0, 0.22);
+    --rule-soft:    rgba(255, 176, 0, 0.12);
+    --bezel:        #17110A;
+    --bezel-edge:   rgba(255, 176, 0, 0.14);
+
+    /* ---- light emission ---- */
+    --bloom-s:      0 0 6px rgba(255, 176, 0, 0.30);
+    --bloom-m:      0 0 10px rgba(255, 176, 0, 0.42), 0 0 34px rgba(255, 140, 0, 0.20);
+    --bloom-hot:    0 0 12px rgba(255, 205, 120, 0.55), 0 0 46px rgba(255, 150, 0, 0.30);
+    --fringe-r:     rgba(255, 74, 0, 0.42);
+    --fringe-b:     rgba(0, 168, 255, 0.20);
+    --glow-focus:   0 0 0 1px rgba(255, 176, 0, 0.55), 0 0 26px rgba(255, 176, 0, 0.35);
+    --vignette:     rgba(0, 0, 0, 0.78);
+    --shadow-cab:   0 24px 70px rgba(0, 0, 0, 0.60);
+    --grid-line:    rgba(255, 176, 0, 0.055);
+    --scan-line:    rgba(0, 0, 0, 0.052);
+    --glare:        rgba(255, 255, 255, 0.030);
+    --band-tint:    rgba(255, 240, 206, 0.030);
+    --flicker-tint: rgba(255, 176, 0, 0.045);
+    --beam:         rgba(255, 240, 206, 0.92);
+    --wash-top:     rgba(255, 176, 0, 0.055);
+
+    /* ---- type ---- */
+    --font-display: "Space Mono", ui-monospace, "SFMono-Regular", monospace;
+    --font-body:    "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+    --text-xs:   0.75rem;
+    --text-sm:   0.875rem;
+    --text-base: 1rem;
+    --text-lg:   1.25rem;
+    --text-xl:   1.5625rem;
+    --text-2xl:  1.9375rem;
+    --text-3xl:  2.4375rem;
+    --text-4xl:  3.0625rem;
+
+    /* ---- space ---- */
+    --space-1: 4px;  --space-2: 8px;  --space-3: 16px; --space-4: 24px;
+    --space-5: 32px; --space-6: 48px; --space-7: 64px; --space-8: 96px;
+
+    /* ---- motion ---- */
+    --dur:      380ms;
+    --dur-fast: 160ms;
+    --ease:     cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  /* Bright room: more beam current, less overlay. A remap, not an inversion. */
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ink-hot:    #FFF7E4;
+      --ink:        #FFC23A;
+      --ink-dim:    #E8B266;
+      --ink-ghost:  #7E5B23;
+      --grid-line:  rgba(255, 194, 58, 0.040);
+      --scan-line:  rgba(0, 0, 0, 0.034);
+      --glare:      rgba(255, 255, 255, 0.022);
+      --wash-top:   rgba(255, 194, 58, 0.045);
+      --bloom-m:    0 0 8px rgba(255, 194, 58, 0.30), 0 0 26px rgba(255, 150, 0, 0.14);
+      --bloom-hot:  0 0 10px rgba(255, 220, 150, 0.40), 0 0 34px rgba(255, 160, 0, 0.20);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink-hot:    #FFF0CE;
+    --ink:        #FFB000;
+    --ink-dim:    #D69A4A;
+    --ink-ghost:  #6E4E1C;
+    --grid-line:  rgba(255, 176, 0, 0.055);
+    --scan-line:  rgba(0, 0, 0, 0.052);
+    --glare:      rgba(255, 255, 255, 0.030);
+    --wash-top:   rgba(255, 176, 0, 0.055);
+    --bloom-m:    0 0 10px rgba(255, 176, 0, 0.42), 0 0 34px rgba(255, 140, 0, 0.20);
+    --bloom-hot:  0 0 12px rgba(255, 205, 120, 0.55), 0 0 46px rgba(255, 150, 0, 0.30);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root { --dur: 0.01ms; --dur-fast: 0.01ms; }
+  }
+}
+
+@layer base {
+  html {
+    background: var(--bg-void);
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--bg-void);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    font-weight: 400;
+    line-height: 1.6;
+    min-height: 100svh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+    text-shadow: var(--bloom-s);
+  }
+  h1, h2, h3 { font-weight: 400; line-height: 1.1; }
+  ::selection { background: var(--ink); color: var(--bg-screen); text-shadow: none; }
+  :focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * CHROME: the physical object. Bezel, raster, glass.
+ * ------------------------------------------------------------------ */
+@layer chrome {
+  .cabinet {
+    min-height: 100svh;
+    padding: clamp(6px, 0.8vw, 10px);
+    display: flex;
+  }
+  .bezel {
+    position: relative;
+    flex: 1;
+    background: var(--bezel);
+    border: 1px solid var(--bezel-edge);
+    border-radius: clamp(10px, 2vw, 22px);
+    padding: clamp(5px, 0.7vw, 8px);
+    box-shadow:
+      inset 0 1px 0 var(--rule-soft),
+      var(--shadow-cab);
+    display: flex;
+    isolation: isolate;
+  }
+  /* vertical chassis legend down the left bezel */
+  .legend {
+    display: none;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: var(--text-xs);
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: var(--ink-ghost);
+    padding: var(--space-3) 6px;
+    text-shadow: none;
+    user-select: none;
+  }
+  .screen {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    background:
+      radial-gradient(120% 130% at 50% 0%, var(--wash-top) 0%, transparent 58%),
+      var(--bg-screen);
+    border-radius: clamp(6px, 1.4vw, 14px);
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px var(--rule-soft);
+    display: flex;
+    flex-direction: column;
+  }
+  .raster {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-3) clamp(14px, 3.4vw, var(--space-6));
+    gap: var(--space-3);
+  }
+  .power-dot {
+    flex: none;
+    width: 6px; height: 6px;
+    border-radius: 999px;
+    background: var(--ink);
+    box-shadow: var(--bloom-m);
+    animation: pulse 4.5s var(--ease) infinite;
+  }
+  @media (min-width: 900px) {
+    .legend { display: block; }
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * COMPONENTS
+ * ------------------------------------------------------------------ */
+@layer components {
+
+  /* ---- status bar ---- */
+  .status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    font-size: var(--text-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    border-bottom: 1px solid var(--rule-soft);
+    padding-bottom: var(--space-3);
+  }
+  .status__id { color: var(--ink); letter-spacing: 0.2em; }
+  .status__spacer { flex: 1 1 auto; min-width: 0; }
+  .status__clock { color: var(--ink); }
+  .cal { display: flex; align-items: flex-end; gap: 2px; }
+  .cal i { display: block; width: 5px; background: var(--ink); }
+
+  /* ---- buffer gutter: every block is numbered ---- */
+  .blk { position: relative; }
+  @media (min-width: 720px) {
+    .raster { padding-left: clamp(56px, 6vw, 86px); }
+    .blk::before {
+      content: attr(data-ln);
+      position: absolute;
+      left: clamp(-58px, -5vw, -40px);
+      top: 0.35em;
+      font-size: var(--text-xs);
+      letter-spacing: 0.1em;
+      color: var(--ink-ghost);
+      text-shadow: none;
+      user-select: none;
+    }
+  }
+
+  /* ---- boot log ---- */
+  .boot-log {
+    font-size: var(--text-sm);
+    line-height: 1.45;
+    color: var(--ink-dim);
+    display: grid;
+    gap: 2px;
+  }
+  .boot-log p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .boot-log .sig { color: var(--ink-ghost); }
+  .boot-log .ok { color: var(--ink); }
+  .boot-log li { list-style: none; }
+
+  /* ---- masthead ---- */
+  .masthead { display: grid; gap: var(--space-3); }
+  .name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.4375rem, min(12vw, 8.2vh), 4.78125rem);
+    letter-spacing: -0.045em;
+    line-height: 0.94;
+    color: var(--ink-hot);
+    text-transform: uppercase;
+    text-shadow:
+      0.6px 0 0 var(--fringe-r),
+      -0.6px 0 0 var(--fringe-b),
+      var(--bloom-hot);
+  }
+  .name span { display: block; }
+  .role {
+    max-width: 46ch;
+    font-size: clamp(0.875rem, 1.35vw, 1.25rem);
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  .role b { font-weight: 600; color: var(--ink-hot); }
+
+  /* ---- hatch rule ---- */
+  .hatch {
+    height: 10px;
+    border-top: 1px solid var(--rule);
+    background-image: repeating-linear-gradient(
+      -45deg,
+      var(--rule-soft) 0 1px,
+      transparent 1px 7px
+    );
+  }
+
+  /* ---- section label ---- */
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    font-size: var(--text-xs);
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .sec-head .count { color: var(--ink-ghost); margin-left: auto; }
+
+  /* ---- THE TWO DESTINATIONS ---- */
+  .directory {
+    display: grid;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .rec {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--space-3) clamp(var(--space-3), 2.4vw, var(--space-5));
+    padding: clamp(var(--space-3), 1.5vw, var(--space-4)) clamp(var(--space-2), 1.6vw, var(--space-4));
+    background: var(--bg-row);
+    transition: background-color var(--dur-fast) var(--ease),
+                transform var(--dur-fast) var(--ease);
+  }
+  .rec + .rec { border-top: 1px solid var(--rule-soft); }
+  /* the beam bar on the left edge */
+  .rec::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--ink);
+    box-shadow: var(--bloom-m);
+    transform: scaleY(0);
+    transform-origin: 50% 0;
+    transition: transform var(--dur-fast) var(--ease);
+  }
+  .rec:hover, .rec:focus-visible { background: var(--bg-row-hot); }
+  .rec:hover::before, .rec:focus-visible::before { transform: scaleY(1); }
+  .rec:focus-visible { outline: 2px solid var(--ink); outline-offset: -3px; box-shadow: var(--glow-focus); }
+  .rec:active { transform: translateY(1px); }
+
+  .rec__mark {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .rec__idx {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.5625rem, 3.4vw, 1.9375rem);
+    color: var(--ink-ghost);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    text-shadow: none;
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .rec:hover .rec__idx, .rec:focus-visible .rec__idx { color: var(--ink); }
+  .rec__glyph { width: 34px; height: 34px; color: var(--ink-dim); flex: none; }
+  .rec__glyph [stroke] { stroke: currentColor; }
+  .rec__glyph [fill]:not([fill="none"]) { fill: currentColor; }
+  .rec:hover .rec__glyph, .rec:focus-visible .rec__glyph { color: var(--ink); }
+
+  .rec__body { min-width: 0; display: grid; gap: 2px; }
+  .rec__label {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.25rem, 2.6vw, 1.5625rem);
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    color: var(--ink-hot);
+    text-shadow: var(--bloom-m);
+  }
+  .rec__handle { font-size: var(--text-sm); color: var(--ink); white-space: nowrap; }
+  .rec__url {
+    font-size: var(--text-xs);
+    letter-spacing: 0.04em;
+    color: var(--ink-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .rec__go {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    justify-self: end;
+  }
+  .keycap {
+    display: none;
+    font-size: var(--text-xs);
+    letter-spacing: 0.1em;
+    color: var(--ink-dim);
+    border: 1px solid var(--rule);
+    background: var(--bg-badge);
+    border-radius: 4px;
+    padding: 3px 8px;
+    text-shadow: none;
+    white-space: nowrap;
+  }
+  .open-lbl {
+    font-size: var(--text-xs);
+    letter-spacing: 0.24em;
+    color: var(--ink-dim);
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .rec:hover .open-lbl, .rec:focus-visible .open-lbl { color: var(--ink-hot); }
+  .arrow {
+    font-size: var(--text-xl);
+    line-height: 1;
+    color: var(--ink);
+    text-shadow: var(--bloom-m);
+    transition: transform var(--dur-fast) var(--ease);
+  }
+  .rec:hover .arrow, .rec:focus-visible .arrow { transform: translateX(5px); }
+
+  @media (min-width: 620px) { .keycap { display: inline-block; } }
+  @media (max-width: 374px) { .open-lbl { display: none; } }
+  @media (max-width: 619px) {
+    .rec { grid-template-columns: auto 1fr auto; gap: var(--space-3); padding-block: var(--space-4); }
+    .rec__glyph { display: none; }
+    .rec__go { align-self: center; gap: var(--space-2); }
+    .rec__url { display: none; }
+    .cal { display: none; }
+    .boot-log { font-size: var(--text-xs); }
+    .status { letter-spacing: 0.12em; }
+  }
+
+  /* ---- prompt + footer ---- */
+  .prompt {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--ink-dim);
+  }
+  .prompt > span:last-child { min-width: 0; }
+  .prompt b { font-weight: 600; color: var(--ink-hot); }
+  .prompt .sig { color: var(--ink); }
+  .caret {
+    display: inline-block;
+    width: 0.6em; height: 1.05em;
+    background: var(--ink);
+    box-shadow: var(--bloom-m);
+    transform: translateY(0.16em);
+    animation: blink 1.06s steps(1, end) infinite;
+  }
+  .buffer {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    font-size: var(--text-sm);
+    line-height: 1.7;
+    color: var(--ink-ghost);
+    text-shadow: none;
+    user-select: none;
+  }
+  .foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    align-items: center;
+    border-top: 1px solid var(--rule-soft);
+    padding-top: var(--space-3);
+    font-size: var(--text-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-ghost);
+  }
+  .foot .eof { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--ink-dim); }
+}
+
+/* ------------------------------------------------------------------ *
+ * EFFECTS: glass, scanlines, grid, vignette, boot reveal
+ * ------------------------------------------------------------------ */
+@layer effects {
+  .fx { position: absolute; inset: 0; pointer-events: none; }
+
+  /* convergence grid, sits under the text */
+  .fx--grid {
+    z-index: 0;
+    background-image:
+      repeating-linear-gradient(90deg, var(--grid-line) 0 1px, transparent 1px 64px),
+      repeating-linear-gradient(0deg,  var(--grid-line) 0 1px, transparent 1px 64px);
+    -webkit-mask-image: radial-gradient(115% 105% at 50% 45%, #000 30%, transparent 78%);
+            mask-image: radial-gradient(115% 105% at 50% 45%, #000 30%, transparent 78%);
+  }
+  /* the big convergence target, bleeding off the right edge */
+  .fx--target { z-index: 0; overflow: hidden; }
+  .fx--target svg {
+    position: absolute;
+    right: -14%;
+    top: 50%;
+    width: min(760px, 74vw);
+    transform: translateY(-50%);
+    color: var(--ink);
+    opacity: 0.085;
+  }
+
+  /* scanlines + curvature + glare, above the text but very low alpha */
+  .fx--scan {
+    z-index: 4;
+    background-image: repeating-linear-gradient(
+      180deg,
+      var(--scan-line) 0 1px,
+      transparent 1px 3px
+    );
+  }
+  .fx--glass {
+    z-index: 5;
+    background:
+      linear-gradient(104deg, var(--glare) 0 16%, transparent 34%),
+      radial-gradient(128% 118% at 50% 50%, transparent 52%, var(--vignette) 100%);
+  }
+  .fx--flicker {
+    z-index: 6;
+    background: var(--flicker-tint);
+    opacity: 0;
+    animation: flicker 7s steps(1, end) infinite;
+  }
+  /* refresh band, transform-only */
+  .fx--band {
+    z-index: 5;
+    height: 26%;
+    inset: auto 0 auto 0;
+    background: linear-gradient(180deg, transparent 0%, var(--band-tint) 50%, transparent 100%);
+    animation: sweep 9s linear infinite;
+  }
+
+  /* power-on: a scan line opens into a full raster */
+  .fx--power {
+    z-index: 9;
+    background: linear-gradient(180deg, transparent 0%, var(--beam) 50%, transparent 100%);
+    transform-origin: 50% 50%;
+    animation: poweron 420ms var(--ease) 1 both;
+  }
+
+  @keyframes poweron {
+    0%   { transform: scaleY(0.006); opacity: 1; }
+    38%  { transform: scaleY(0.02);  opacity: 1; }
+    100% { transform: scaleY(1);     opacity: 0; }
+  }
+  @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+  @keyframes pulse { 0%, 88%, 100% { opacity: 1; } 94% { opacity: 0.35; } }
+  @keyframes flicker {
+    0%, 96.5%, 100% { opacity: 0; }
+    97%   { opacity: 0.55; }
+    97.6% { opacity: 0; }
+    98.2% { opacity: 0.35; }
+    98.8% { opacity: 0; }
+  }
+  @keyframes sweep {
+    0%   { transform: translateY(-120%); }
+    100% { transform: translateY(520%); }
+  }
+
+  /* staggered reveal */
+  .boot {
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+    transition-delay: var(--d, 0ms);
+  }
+  .boot.on { opacity: 1; transform: none; }
+
+  html.skip .boot { transition-delay: 0ms !important; }
+  html.skip .fx--power { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fx--power, .fx--band, .fx--flicker { display: none; }
+    .caret, .power-dot { animation: none; }
+    .boot { opacity: 1; transform: none; transition: none; transition-delay: 0ms !important; }
+  }
+}
+
+@layer utilities {
+  .vh {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="cabinet">
+  <div class="bezel">
+    <div class="legend" aria-hidden="true">Phosphor terminal &middot; Amber P3</div>
+
+    <div class="screen">
+      <div class="fx fx--grid" aria-hidden="true"></div>
+      <div class="fx fx--target" aria-hidden="true">
+        <svg viewBox="0 0 400 400" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
+          <circle cx="200" cy="200" r="196"/>
+          <circle cx="200" cy="200" r="150"/>
+          <circle cx="200" cy="200" r="96"/>
+          <circle cx="200" cy="200" r="42"/>
+          <path d="M200 0v400M0 200h400"/>
+          <path d="M58 58 342 342M342 58 58 342" stroke-dasharray="4 10"/>
+          <rect x="112" y="112" width="176" height="176"/>
+          <rect x="60" y="60" width="280" height="280" stroke-dasharray="2 8"/>
+        </svg>
+      </div>
+
+      <main class="raster">
+
+        <!-- STATUS ------------------------------------------------- -->
+        <div class="status boot" style="--d:40ms" role="note" aria-label="Terminal status">
+          <span class="status__id">MCDONALD/LINK-DIRECTORY</span>
+          <span aria-hidden="true">AMBER P3</span>
+          <span class="status__spacer"></span>
+          <span class="cal" aria-hidden="true" title="Phosphor calibration wedge">
+            <i style="height:4px;opacity:.18"></i><i style="height:6px;opacity:.32"></i><i style="height:8px;opacity:.46"></i><i style="height:10px;opacity:.6"></i><i style="height:12px;opacity:.74"></i><i style="height:14px;opacity:.87"></i><i style="height:16px;opacity:1"></i>
+          </span>
+          <span>LOCAL <span class="status__clock" id="clock">--:--:--</span></span>
+        </div>
+
+        <!-- BOOT LOG ----------------------------------------------- -->
+        <div class="blk boot-log boot" data-ln="0001" style="--d:120ms" aria-hidden="true">
+          <p><span class="sig">&gt;</span> <span data-type="init link directory ......... [ ok ]"></span></p>
+          <p><span class="sig">&gt;</span> <span data-type="profile loaded: callum mcdonald"></span></p>
+          <p><span class="sig">&gt;</span> <span data-type="destinations resolved: 2"></span></p>
+        </div>
+        <p class="vh">Boot log: link directory initialised, profile loaded for Callum McDonald, two destinations resolved.</p>
+
+        <!-- MASTHEAD ----------------------------------------------- -->
+        <header class="blk masthead" data-ln="0014">
+          <h1 class="name boot" style="--d:260ms"><span>Callum</span><span>McDonald</span></h1>
+          <p class="role boot" style="--d:380ms">
+            <b>Engineering Manager.</b> Security detection, vulnerability management and AI enablement.
+          </p>
+        </header>
+
+        <!-- DIRECTORY ---------------------------------------------- -->
+        <section class="blk" data-ln="0027" aria-labelledby="dir-h">
+          <div class="hatch boot" style="--d:440ms;margin-bottom:var(--space-3)" aria-hidden="true"></div>
+          <h2 id="dir-h" class="sec-head boot" style="--d:480ms">
+            <span>Destinations</span>
+            <span class="count" aria-hidden="true">02 OF 02</span>
+          </h2>
+
+          <div class="directory" style="margin-top:var(--space-3)">
+
+            <a class="rec boot" style="--d:560ms" id="lnk1"
+               href="https://github.com/maccydee">
+              <span class="rec__mark">
+                <span class="rec__idx" aria-hidden="true">01</span>
+                <svg class="rec__glyph" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true">
+                  <circle cx="8" cy="6" r="3"/><circle cx="8" cy="26" r="3"/><circle cx="24" cy="12" r="3"/>
+                  <path d="M8 9v14"/><path d="M8 16h9a7 7 0 0 0 7-1"/>
+                </svg>
+              </span>
+              <span class="rec__body">
+                <h3 class="rec__label">GitHub</h3>
+                <span class="rec__handle">@maccydee</span>
+                <span class="rec__url">github.com/maccydee</span>
+              </span>
+              <span class="rec__go">
+                <span class="keycap" aria-hidden="true">KEY 1</span>
+                <span class="open-lbl" aria-hidden="true">OPEN</span>
+                <span class="arrow" aria-hidden="true">&rarr;</span>
+              </span>
+            </a>
+
+            <a class="rec boot" style="--d:640ms" id="lnk2"
+               href="https://www.linkedin.com/in/callum-mcdonald-b416b299/">
+              <span class="rec__mark">
+                <span class="rec__idx" aria-hidden="true">02</span>
+                <svg class="rec__glyph" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true">
+                  <rect x="4" y="4" width="24" height="24"/>
+                  <path d="M10 14v8"/><path d="M10 10.5v.01"/>
+                  <path d="M16 22v-8"/><path d="M16 17a3 3 0 0 1 6 0v5"/>
+                </svg>
+              </span>
+              <span class="rec__body">
+                <h3 class="rec__label">LinkedIn</h3>
+                <span class="rec__handle">/in/callum-mcdonald</span>
+                <span class="rec__url">linkedin.com/in/callum-mcdonald-b416b299</span>
+              </span>
+              <span class="rec__go">
+                <span class="keycap" aria-hidden="true">KEY 2</span>
+                <span class="open-lbl" aria-hidden="true">OPEN</span>
+                <span class="arrow" aria-hidden="true">&rarr;</span>
+              </span>
+            </a>
+
+          </div>
+        </section>
+
+        <!-- PROMPT ------------------------------------------------- -->
+        <p class="blk prompt boot" data-ln="0042" style="--d:760ms">
+          <span class="sig" aria-hidden="true">&gt;</span>
+          <span>press <b>1</b> or <b>2</b> to select, enter to open&nbsp;<span class="caret" aria-hidden="true"></span></span>
+        </p>
+
+        <!-- UNUSED BUFFER ------------------------------------------ -->
+        <div class="buffer boot" style="--d:800ms" aria-hidden="true"><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span><span>~</span></div>
+
+        <!-- FOOTER ------------------------------------------------- -->
+        <footer class="foot boot" style="--d:840ms">
+          <span class="power-dot" aria-hidden="true"></span>
+          <span>&copy; 2026 Callum McDonald</span>
+          <span class="eof" aria-hidden="true">EOF</span>
+        </footer>
+      </main>
+
+      <div class="fx fx--band" aria-hidden="true"></div>
+      <div class="fx fx--scan" aria-hidden="true"></div>
+      <div class="fx fx--glass" aria-hidden="true"></div>
+      <div class="fx fx--flicker" aria-hidden="true"></div>
+      <div class="fx fx--power" aria-hidden="true"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root    = document.documentElement;
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var boots   = Array.prototype.slice.call(document.querySelectorAll('.boot'));
+  var typers  = Array.prototype.slice.call(document.querySelectorAll('[data-type]'));
+  var timers  = [];
+  var settled = false;
+
+  function settle(skipped) {
+    if (settled) return;
+    settled = true;
+    timers.forEach(clearInterval);
+    timers.forEach(clearTimeout);
+    if (skipped) root.classList.add('skip');
+    typers.forEach(function (el) { el.textContent = el.getAttribute('data-type'); });
+    boots.forEach(function (el) { el.classList.add('on'); });
+  }
+
+  // Never leave a blank screen: reveals start on the first frame.
+  if (reduced) {
+    settle(true);
+  } else {
+    requestAnimationFrame(function () {
+      boots.forEach(function (el) { el.classList.add('on'); });
+    });
+
+    // type the three boot lines, total settle ~1.2s
+    var i = 0;
+    (function next() {
+      if (settled) return;
+      if (i >= typers.length) { settled = true; return; }
+      var el = typers[i], txt = el.getAttribute('data-type'), c = 0;
+      var id = setInterval(function () {
+        if (settled) { clearInterval(id); return; }
+        c += 2;
+        el.textContent = txt.slice(0, c);
+        if (c >= txt.length) { clearInterval(id); i++; timers.push(setTimeout(next, 70)); }
+      }, 14);
+      timers.push(id);
+    })();
+
+    // any interaction jumps straight to the end state
+    ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function (evt) {
+      window.addEventListener(evt, function () { settle(true); }, { once: true, passive: true });
+    });
+    setTimeout(function () { settle(false); }, 1500);
+  }
+
+  // real local clock, the only live value on the page
+  var clock = document.getElementById('clock');
+  function tick() {
+    var d = new Date();
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    clock.textContent = p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  // 1 / 2 select a destination. Enter opens it, so nothing navigates by surprise.
+  document.addEventListener('keydown', function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === '1') { document.getElementById('lnk1').focus(); }
+    if (e.key === '2') { document.getElementById('lnk2').focus(); }
+  });
+})();
+</script>
+</body>
+</html>
