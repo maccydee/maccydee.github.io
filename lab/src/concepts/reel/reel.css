@@ -1,0 +1,1312 @@
+/* 04 REEL. Every rule is scoped under .reel. */
+
+.reel {
+  --ink: #0b0b0c;
+  --bone: #efebe2;
+  --lime: #d4ff3a;
+  --uv: #5a2dff;
+  --pad: 24px;
+  --flex: 'Roboto Flex Variable', 'Roboto Flex', 'Helvetica Neue', Arial, sans-serif;
+  --serif: 'Instrument Serif', 'Times New Roman', serif;
+  --out: cubic-bezier(0.16, 1, 0.3, 1);
+  background: var(--ink);
+  color: var(--bone);
+  font-family: var(--flex);
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  min-height: 100vh;
+}
+
+.reel p,
+.reel h1,
+.reel h2,
+.reel h3,
+.reel ul {
+  margin: 0;
+  padding: 0;
+  font-weight: inherit;
+  font-size: inherit;
+}
+.reel ul {
+  list-style: none;
+}
+.reel a {
+  color: inherit;
+  text-decoration: none;
+}
+.reel button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.reel a:focus-visible,
+.reel button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+.reel em {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+}
+.reel .sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.reel .arw {
+  width: 1em;
+  height: 1em;
+  flex: none;
+  display: inline-block;
+  vertical-align: -0.12em;
+}
+
+/* Colour fields. Lime is never used for type on bone. */
+.reel .t-ink {
+  --field: var(--ink);
+  background: var(--ink);
+  color: var(--bone);
+  --acc: var(--lime);
+}
+.reel .t-bone {
+  --field: var(--bone);
+  background: var(--bone);
+  color: var(--ink);
+  --acc: var(--ink);
+}
+.reel .t-lime {
+  --field: var(--lime);
+  background: var(--lime);
+  color: var(--ink);
+  --acc: var(--ink);
+}
+.reel .t-uv {
+  --field: var(--uv);
+  background: var(--uv);
+  color: var(--bone);
+  --acc: var(--lime);
+}
+
+/* Variable display type: axes are driven through custom properties. */
+.reel .v,
+.reel .ch {
+  font-variation-settings:
+    'wght' var(--wght, 900),
+    'wdth' var(--wdth, 100);
+}
+.reel .row {
+  display: flex;
+  overflow-x: visible;
+  overflow-y: clip;
+  white-space: nowrap;
+}
+.reel .row--c {
+  justify-content: center;
+}
+.reel .fit {
+  flex: none;
+  display: block;
+  white-space: nowrap;
+  line-height: 0.8;
+  padding: 0.035em 0 0.05em;
+  text-transform: uppercase;
+  font-size: 14cqw;
+  /* lines are measured whole and then split into letters: with kerning off the two widths match */
+  font-kerning: none;
+  font-variant-ligatures: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Stage                                                               */
+/* ------------------------------------------------------------------ */
+.reel .stage {
+  position: fixed;
+  inset: 0;
+  overflow: clip;
+  container-type: size;
+  background: var(--ink);
+}
+.reel .film .stage {
+  opacity: 0;
+}
+.reel .film.is-ready .stage {
+  opacity: 1;
+}
+.reel .stage > * {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* every layer is its own stacking context, so layer order is DOM order */
+  isolation: isolate;
+}
+.reel .stage a,
+.reel .stage button {
+  pointer-events: auto;
+}
+.reel .is-measuring .bl {
+  transition: none !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* Readout                                                             */
+/* ------------------------------------------------------------------ */
+.reel .hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  font-variation-settings:
+    'wght' 580,
+    'wdth' 100;
+}
+.reel .hud i {
+  font-style: normal;
+  opacity: 0.62;
+}
+.reel .hud b {
+  font-weight: inherit;
+}
+.reel .hud__top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* The design picker owns the top right corner (a 36px pill, 12px from the top).
+     The row is 60px tall so the readout centres on the pill, and it stops short of
+     the picker's reserved width so the timecode sits to its left in every field. */
+  height: var(--picker-h, 60px);
+  padding: 0 calc(var(--picker-w, 152px) + 6px) 0 var(--pad);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.reel .hud__scene em {
+  font-size: 17px;
+  letter-spacing: 0;
+  text-transform: none;
+  margin-left: 0.6em;
+  vertical-align: -0.06em;
+}
+.reel .hud__who {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.reel .hud__who.is-quiet {
+  visibility: hidden;
+}
+.reel .hud__reel {
+  position: absolute;
+  left: var(--pad);
+  right: var(--pad);
+  bottom: 22px;
+  /* left-anchored and capped */
+  right: auto;
+  width: min(64cqw, 760px);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.reel .bar {
+  position: relative;
+  flex: 1;
+  height: 2px;
+  background: color-mix(in srgb, currentColor 24%, transparent);
+  overflow: clip;
+}
+.reel .bar__fill {
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+}
+
+/* ------------------------------------------------------------------ */
+/* 01 Title                                                            */
+/* ------------------------------------------------------------------ */
+.reel .s1 {
+  display: flex;
+  flex-direction: column;
+  padding: var(--picker-h, 60px) var(--pad) 0;
+}
+.reel .name {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.reel .name__line {
+  display: block;
+  overflow-x: visible;
+  overflow-y: clip;
+  white-space: nowrap;
+  font-size: 20cqh;
+  line-height: 0.8;
+  padding: 0.035em 0 0.05em;
+}
+.reel .name__in {
+  display: inline-block;
+  white-space: nowrap;
+  transform-origin: 0 50%;
+}
+.reel .name__l {
+  display: inline-block;
+  font-variation-settings:
+    'wght' 760,
+    'wdth' 100;
+}
+.reel .s1__foot {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  column-gap: clamp(24px, 4cqw, 72px);
+  /* the bottom 52px is a strip that mirrors the readout strip at the top */
+  padding: 10px 0 52px;
+}
+.reel .s1__role {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(30px, 3.5cqw, 58px);
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+}
+.reel .s1__tag {
+  max-width: 46ch;
+  font-size: clamp(15px, 1.2cqw, 19px);
+  line-height: 1.35;
+  font-variation-settings:
+    'wght' 430,
+    'wdth' 100;
+}
+.reel .seelink {
+  position: relative;
+  isolation: isolate;
+  justify-self: start;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 10px 9px 0;
+  border-bottom: 2px solid var(--lime);
+  color: var(--lime);
+  font-size: clamp(22px, 2.1cqw, 32px);
+  white-space: nowrap;
+  line-height: 1;
+  text-transform: uppercase;
+  font-variation-settings:
+    'wght' 860,
+    'wdth' 62;
+  transition:
+    color 0.2s linear,
+    padding 0.5s var(--out);
+}
+.reel .seelink::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: var(--lime);
+  transform: scaleY(0);
+  transform-origin: 50% 100%;
+  transition: transform 0.5s var(--out);
+}
+.reel .seelink em {
+  color: var(--bone);
+  font-size: 0.86em;
+  text-transform: none;
+  transition: color 0.2s linear;
+}
+.reel .seelink .arw {
+  align-self: center;
+  width: 0.72em;
+  height: 0.72em;
+  transition: transform 0.5s var(--out);
+}
+@media (hover: hover) {
+  .reel .seelink:hover {
+    color: var(--ink);
+    padding-left: 10px;
+    padding-right: 0;
+  }
+  .reel .seelink:hover em {
+    color: var(--ink);
+  }
+  .reel .seelink:hover::before {
+    transform: scaleY(1);
+  }
+  .reel .seelink:hover .arw {
+    transform: translate(3px, -3px) rotate(-45deg) !important;
+  }
+}
+.reel .s1__cue {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-variation-settings:
+    'wght' 580,
+    'wdth' 100;
+  color: var(--lime);
+}
+.reel .s1__cue .arw {
+  width: 14px;
+  height: 14px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Wipes: a field rises from the bottom while its content stays put     */
+/* ------------------------------------------------------------------ */
+.reel .rise {
+  overflow: clip;
+}
+.reel .rise__in {
+  position: absolute;
+  inset: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* 02 Role                                                             */
+/* ------------------------------------------------------------------ */
+.reel .s2b {
+  /* hidden until the invert edge enters; the polygon is set per frame */
+  clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%);
+}
+.reel .s2b .bands {
+  color: var(--lime);
+}
+.reel .bands {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.5cqh;
+  transform: rotate(-7deg) scale(1.14);
+}
+.reel .band {
+  white-space: nowrap;
+  font-size: min(27cqh, 46cqw);
+  line-height: 0.8;
+  text-transform: uppercase;
+}
+.reel .band--a {
+  --wght: 1000;
+  --wdth: 151;
+}
+.reel .band--b {
+  --wght: 180;
+  --wdth: 151;
+}
+.reel .band__track {
+  display: inline-flex;
+  will-change: transform;
+}
+.reel .band__unit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.16em;
+  padding-right: 0.16em;
+  font-variation-settings:
+    'wght' var(--wght),
+    'wdth' var(--wdth);
+}
+.reel .band .arw {
+  width: 0.66em;
+  height: 0.66em;
+}
+.reel .band--b .arw path {
+  stroke-width: 0.9;
+}
+
+/* ------------------------------------------------------------------ */
+/* 03 Disciplines                                                      */
+/* ------------------------------------------------------------------ */
+.reel .d {
+  opacity: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 var(--pad);
+}
+/* Disciplines that sit inside a mask (the I window, or a rising field) are always painted:
+   the mask decides when they are seen. */
+.reel .d4,
+.reel .dx {
+  position: absolute;
+  inset: 0;
+  opacity: 1;
+}
+.reel .d4 .d__lines {
+  color: var(--lime);
+}
+.reel .d4 .row {
+  overflow: visible;
+}
+.reel .d4 .fit {
+  transform-origin: 50% 80%;
+}
+.reel .zoom {
+  position: relative;
+}
+.reel .d__lines {
+  position: relative;
+  z-index: 1;
+}
+.reel .dot {
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-radius: 44%;
+  background: var(--uv);
+}
+.reel .d2 .row {
+  overflow: visible;
+}
+.reel .d3 .fit {
+  --wght: 1000;
+}
+.reel .d__meta {
+  position: absolute;
+  left: var(--pad);
+  bottom: 24px;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  font-variation-settings:
+    'wght' 580,
+    'wdth' 100;
+}
+.reel .d__meta i {
+  font-style: normal;
+  opacity: 0.62;
+}
+.reel .d__meta b {
+  font-weight: inherit;
+}
+.reel .d__meta em {
+  font-size: 17px;
+  letter-spacing: 0;
+  text-transform: none;
+  margin-left: 0.6em;
+}
+.reel .slat {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: calc(20% + 1px);
+  overflow: clip;
+  background: var(--lime);
+  color: var(--ink);
+}
+.reel .slat__in {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100cqw;
+  height: 100cqh;
+}
+
+/* ------------------------------------------------------------------ */
+/* 04 Work                                                             */
+/* ------------------------------------------------------------------ */
+.reel .win {
+  inset: auto;
+  overflow: clip;
+  opacity: 0;
+}
+.reel .win__in {
+  position: absolute;
+}
+.reel .win.is-full {
+  left: 0 !important;
+  top: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  transform: none !important;
+}
+.reel .win.is-full > .win__in {
+  left: 0 !important;
+  top: 0 !important;
+  transform: none !important;
+}
+.reel .work {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+}
+.reel .track {
+  display: flex;
+  width: max-content;
+  height: 100%;
+  will-change: transform;
+}
+.reel .panel {
+  position: relative;
+  flex: 0 0 100cqw;
+  width: 100cqw;
+  height: 100cqh;
+  overflow: clip;
+}
+.reel .panel__ovl {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100cqw;
+  height: 100cqh;
+  pointer-events: none;
+}
+
+.reel .panel--title {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 var(--pad);
+}
+.reel .work__sub {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  margin-top: 3.5cqh;
+}
+.reel .work__note {
+  max-width: 30ch;
+  font-size: clamp(18px, 1.9cqw, 30px);
+  line-height: 1.25;
+  font-variation-settings:
+    'wght' 430,
+    'wdth' 100;
+}
+.reel .work__n {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  font-size: 11px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-variation-settings:
+    'wght' 580,
+    'wdth' 100;
+  color: var(--lime);
+}
+.reel .work__n b {
+  font-weight: inherit;
+}
+.reel .work__n .arw {
+  width: 16px;
+  height: 16px;
+}
+
+.reel .work__top {
+  margin-bottom: 2.6cqh;
+}
+
+/* The LinkedIn panel: the whole field is the link. */
+.reel .see {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 var(--pad) 9cqh;
+  isolation: isolate;
+  transition: color 0.2s linear 0.06s;
+}
+.reel .see__wipe {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: var(--ink);
+  transform: scaleY(0);
+  transform-origin: 50% 100%;
+  transition: transform 0.65s var(--out);
+}
+.reel .see__h {
+  display: block;
+}
+.reel .see__sub {
+  position: absolute;
+  top: 11cqh;
+  left: var(--pad);
+  right: var(--pad);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.reel .see__sub em {
+  font-size: clamp(40px, 5.2cqw, 84px);
+  line-height: 0.9;
+  letter-spacing: -0.01em;
+}
+.reel .see__sub .arw {
+  width: 17cqh;
+  height: 17cqh;
+  transition: transform 0.6s var(--out);
+}
+@media (hover: hover) {
+  .reel .see:hover {
+    color: var(--lime);
+  }
+  .reel .see:hover .see__wipe {
+    transform: scaleY(1);
+  }
+  .reel .see:hover .see__sub .arw {
+    transform: translate(5%, -5%) rotate(-45deg) !important;
+  }
+}
+.reel .see:focus-visible {
+  color: var(--lime);
+  outline-offset: -8px;
+}
+.reel .see:focus-visible .see__wipe {
+  transform: scaleY(1);
+}
+
+.reel .panel--p {
+  display: grid;
+  grid-template-columns: 56fr 44fr;
+  align-items: end;
+  column-gap: 4cqw;
+  padding: 0 var(--pad) 11cqh;
+}
+.reel .panel__num {
+  position: absolute;
+  top: 9.5cqh;
+  left: calc(56cqw + 2cqw);
+  font-size: 46cqh;
+  line-height: 0.8;
+  --wght: 900;
+  --wdth: 118;
+  /* stroke first, then a fill in the field colour: only the outer contour shows,
+     so the variable font's overlapping paths never appear inside the figure */
+  color: var(--field);
+  -webkit-text-stroke: 3px var(--acc);
+  paint-order: stroke fill;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.reel .panel__name {
+  position: relative;
+  z-index: 1;
+}
+.reel .panel__info > * {
+  position: relative;
+  z-index: 1;
+}
+.reel .panel__info {
+  display: grid;
+  gap: clamp(12px, 2cqh, 22px);
+  max-width: 34em;
+  padding-bottom: 0.4cqh;
+}
+.reel .panel--p .panel__kind {
+  position: absolute;
+  top: 11cqh;
+  left: var(--pad);
+  display: grid;
+  gap: 12px;
+}
+.reel .panel__kind em {
+  font-size: clamp(40px, 5.2cqw, 84px);
+  line-height: 0.9;
+  letter-spacing: -0.01em;
+}
+.reel .panel__kind span {
+  font-size: 11px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-variation-settings:
+    'wght' 580,
+    'wdth' 100;
+}
+.reel .panel__figs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 36px;
+}
+.reel .panel__figs li {
+  display: grid;
+  gap: 6px;
+}
+.reel .panel__figs b {
+  font-size: clamp(34px, 4.4cqw, 68px);
+  line-height: 0.82;
+  font-weight: inherit;
+  font-variation-settings:
+    'wght' 800,
+    'wdth' 62;
+  font-variant-numeric: tabular-nums;
+  color: var(--acc);
+}
+.reel .panel__figs span {
+  font-size: 11px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-variation-settings:
+    'wght' 580,
+    'wdth' 100;
+}
+.reel .panel__blurb {
+  max-width: 36ch;
+  font-size: clamp(16px, 1.35cqw, 21px);
+  line-height: 1.4;
+  font-variation-settings:
+    'wght' 430,
+    'wdth' 100;
+}
+.reel .panel__link {
+  justify-self: start;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  white-space: nowrap;
+  padding: 10px 0;
+  border-bottom: 2px solid currentColor;
+  font-size: 12px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-variation-settings:
+    'wght' 680,
+    'wdth' 100;
+  transition: font-variation-settings 0.5s var(--out);
+}
+.reel .panel__dest {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.reel .panel__url {
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-size: 14px;
+  font-variation-settings:
+    'wght' 430,
+    'wdth' 100;
+}
+.reel .panel__link .arw {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.5s var(--out);
+}
+@media (hover: hover) {
+  .reel .panel__link:hover {
+    font-variation-settings:
+      'wght' 680,
+      'wdth' 125;
+  }
+  .reel .panel__link:hover .arw {
+    transform: translate(3px, -3px) rotate(-45deg) !important;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 05 Links                                                            */
+/* ------------------------------------------------------------------ */
+.reel .shut {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: clip;
+}
+.reel .shut--a {
+  top: 0;
+}
+.reel .shut--b {
+  top: 50%;
+}
+.reel .shut__in {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  /* a closed shutter blocks the reel links underneath it */
+  pointer-events: auto;
+}
+.reel .shut--a .shut__in {
+  padding-top: var(--picker-h, 60px);
+}
+.reel .shut--a .hud {
+  height: 100cqh;
+}
+.reel .biglink {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 var(--pad) 1.2cqh;
+  overflow: clip;
+  border-top: 1px solid color-mix(in srgb, var(--bone) 26%, transparent);
+  transition: color 0.2s linear 0.08s;
+}
+.reel .biglink:focus-visible {
+  outline-offset: -6px;
+}
+.reel .biglink__wipe {
+  position: absolute;
+  inset: 0;
+  background: var(--lime);
+  transform: scaleY(0);
+  transform-origin: 50% 100%;
+  transition: transform 0.65s var(--out);
+}
+.reel .biglink__meta {
+  position: absolute;
+  z-index: 1;
+  top: 16px;
+  left: var(--pad);
+  right: var(--pad);
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  font-size: 11px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-variation-settings:
+    'wght' 580,
+    'wdth' 100;
+}
+.reel .biglink__meta b {
+  font-weight: inherit;
+}
+.reel .biglink__meta em {
+  font-size: clamp(22px, 2.2cqw, 34px);
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.reel .biglink__meta .arw {
+  margin-left: auto;
+  align-self: center;
+  width: clamp(22px, 2.4cqw, 36px);
+  height: clamp(22px, 2.4cqw, 36px);
+  transition: transform 0.65s var(--out);
+}
+.reel .biglink__meta .arw {
+  display: none;
+}
+.reel .biglink__arw {
+  position: absolute;
+  z-index: 1;
+  right: var(--pad);
+  bottom: 3.2cqh;
+  width: 21cqh;
+  height: 21cqh;
+  transition:
+    transform 0.6s var(--out),
+    opacity 0.25s linear;
+}
+.reel .biglink__arw .arw {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.reel .biglink__row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  overflow-x: visible;
+  overflow-y: clip;
+}
+.reel .biglink__text {
+  flex: none;
+  white-space: nowrap;
+  font-size: 24cqh;
+  line-height: 0.8;
+  padding: 0.035em 0 0.05em;
+  text-transform: uppercase;
+}
+.reel .bl {
+  display: inline-block;
+  font-variation-settings:
+    'wght' 900,
+    'wdth' var(--wdth, 25);
+  transition: font-variation-settings 0.75s var(--out);
+  transition-delay: calc(var(--i) * 24ms);
+}
+@media (hover: hover) {
+  .reel .biglink:hover {
+    color: var(--ink);
+  }
+  .reel .biglink:hover .biglink__wipe {
+    transform: scaleY(1);
+  }
+  .reel .biglink:hover .bl {
+    font-variation-settings:
+      'wght' 900,
+      'wdth' var(--wdth-hover, 100);
+  }
+  .reel .biglink:hover .biglink__arw {
+    transform: translate(45%, -45%);
+    opacity: 0;
+  }
+}
+.reel .biglink:focus-visible {
+  color: var(--ink);
+}
+.reel .biglink:focus-visible .biglink__wipe {
+  transform: scaleY(1);
+}
+.reel .biglink:focus-visible .biglink__arw {
+  transform: translate(45%, -45%);
+  opacity: 0;
+}
+.reel .biglink:focus-visible .bl {
+  font-variation-settings:
+    'wght' 900,
+    'wdth' var(--wdth-hover, 100);
+}
+.reel .foot {
+  flex: none;
+  height: 56px;
+  padding: 0 var(--pad);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: clamp(20px, 3cqw, 48px);
+  border-top: 1px solid color-mix(in srgb, var(--bone) 26%, transparent);
+  font-size: 11px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-variation-settings:
+    'wght' 580,
+    'wdth' 100;
+}
+.reel .foot__top {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  padding: 8px 0;
+  color: var(--lime);
+}
+.reel .foot__top .arw {
+  width: 14px;
+  height: 14px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Compact frame: phones and portrait                                  */
+/* ------------------------------------------------------------------ */
+@container (max-width: 819px) or (orientation: portrait) {
+  .reel .hud__who,
+  .reel .hud__total {
+    display: none;
+  }
+  .reel .hud__reel {
+    bottom: 58px;
+    right: var(--pad);
+    width: auto;
+  }
+  .reel .s1__foot {
+    grid-template-columns: 1fr;
+    row-gap: 12px;
+    padding-bottom: 60px;
+  }
+  .reel .s1__cue {
+    justify-content: flex-start;
+    left: var(--pad);
+  }
+  .reel .bands {
+    gap: 2cqh;
+  }
+  .reel .d__meta {
+    bottom: 60px;
+  }
+  .reel .work__sub {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .reel .see {
+    padding-bottom: 96px;
+  }
+  .reel .see__sub {
+    top: 76px;
+  }
+  .reel .see__sub em {
+    font-size: 34px;
+  }
+  .reel .see__sub .arw {
+    width: 64px;
+    height: 64px;
+  }
+  .reel .seelink {
+    font-size: 21px;
+    gap: 9px;
+  }
+  .reel .panel--p {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: stretch;
+    padding: 0 var(--pad) 96px;
+  }
+  .reel .panel__link {
+    justify-self: stretch;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+  }
+  .reel .panel__dest {
+    justify-content: space-between;
+  }
+  .reel .panel__num {
+    top: 64px;
+    left: auto;
+    right: var(--pad);
+    font-size: 22cqh;
+    --wdth: 100;
+    -webkit-text-stroke-width: 2.5px;
+  }
+  .reel .panel__info {
+    margin-top: 16px;
+    gap: 12px;
+  }
+  .reel .panel--p .panel__kind {
+    position: relative;
+    top: auto;
+    left: auto;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .reel .panel__kind em {
+    font-size: 26px;
+    line-height: 1;
+  }
+  .reel .biglink__arw {
+    display: none;
+  }
+  .reel .biglink__meta .arw {
+    display: block;
+  }
+  .reel .panel__figs {
+    gap: 8px 24px;
+  }
+  .reel .panel__figs b {
+    font-size: 34px;
+  }
+  .reel .panel__blurb {
+    font-size: 15.5px;
+    line-height: 1.38;
+  }
+  .reel .panel__url {
+    font-size: 13px;
+  }
+  .reel .foot {
+    height: auto;
+    padding: 14px var(--pad) 58px;
+    flex-direction: row;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Reduced motion: a static, well-set page                             */
+/* ------------------------------------------------------------------ */
+.reel .still {
+  container-type: inline-size;
+}
+.reel .still section,
+.reel .still footer {
+  padding: clamp(40px, 8vw, 120px) var(--pad);
+}
+.reel .still .fit {
+  font-size: 13vw;
+}
+.reel .still__hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+}
+.reel .still__hero .fit {
+  --wght: 760;
+}
+.reel .still__lede {
+  display: grid;
+  gap: 14px;
+}
+.reel .still__role {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(32px, 5vw, 64px);
+  line-height: 1;
+}
+.reel .still__tag {
+  max-width: 32ch;
+  font-size: clamp(16px, 1.5vw, 20px);
+  line-height: 1.4;
+  font-variation-settings:
+    'wght' 430,
+    'wdth' 100;
+}
+.reel .still__label {
+  margin-bottom: 28px;
+  font-size: 11px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-variation-settings:
+    'wght' 580,
+    'wdth' 100;
+}
+.reel .still__label em {
+  font-size: 17px;
+  letter-spacing: 0;
+  text-transform: none;
+  margin-left: 0.6em;
+}
+.reel .still__see {
+  display: grid;
+  gap: 14px;
+}
+.reel .still__see em {
+  font-size: clamp(26px, 3.4vw, 44px);
+  line-height: 1;
+}
+.reel .still__see:focus-visible {
+  outline-offset: 6px;
+}
+.reel .still__top {
+  margin-bottom: 24px;
+}
+.reel .still__note {
+  margin-top: 28px;
+  max-width: 30ch;
+  font-size: clamp(18px, 2vw, 28px);
+  line-height: 1.25;
+  font-variation-settings:
+    'wght' 430,
+    'wdth' 100;
+}
+.reel .still__list > li {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 20px clamp(24px, 5vw, 80px);
+  padding: clamp(28px, 5vw, 64px) var(--pad);
+  align-items: start;
+}
+.reel .still__head {
+  display: grid;
+  gap: 14px;
+}
+.reel .still__num {
+  font-size: 11px;
+  letter-spacing: 0.11em;
+  font-variant-numeric: tabular-nums;
+  font-variation-settings:
+    'wght' 580,
+    'wdth' 100;
+}
+.reel .still__name {
+  font-size: clamp(34px, 6vw, 84px);
+  line-height: 0.9;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  font-variation-settings:
+    'wght' 900,
+    'wdth' 50;
+}
+.reel .still__list .panel__info {
+  max-width: 36em;
+}
+.reel .still__list .panel__kind {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.reel .still__list .panel__kind em {
+  font-size: clamp(24px, 2.6vw, 36px);
+  line-height: 1;
+}
+.reel .still__links {
+  display: grid;
+  gap: 0;
+  padding: 0 !important;
+}
+.reel .still__links a {
+  display: grid;
+  gap: 10px;
+  padding: clamp(28px, 5vw, 64px) var(--pad);
+  border-top: 1px solid color-mix(in srgb, var(--bone) 26%, transparent);
+}
+.reel .still__links a:hover,
+.reel .still__links a:focus-visible {
+  background: var(--lime);
+  color: var(--ink);
+}
+.reel .still__links a:focus-visible {
+  outline-offset: -6px;
+}
+.reel .still__links b {
+  font-size: clamp(64px, 16vw, 240px);
+  line-height: 0.8;
+  text-transform: uppercase;
+  font-weight: inherit;
+  font-variation-settings:
+    'wght' 900,
+    'wdth' 40;
+}
+.reel .still__links em {
+  font-size: clamp(22px, 3vw, 34px);
+}
+.reel .still footer {
+  padding-top: 20px;
+  padding-bottom: 64px;
+  border-top: 1px solid color-mix(in srgb, var(--bone) 26%, transparent);
+  font-size: 11px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-variation-settings:
+    'wght' 580,
+    'wdth' 100;
+}
+@media (max-width: 700px) {
+  .reel .still__list > li {
+    grid-template-columns: 1fr;
+  }
+  .reel .still .panel__link {
+    justify-self: stretch;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+  }
+  .reel .still .panel__dest {
+    justify-content: space-between;
+  }
+  .reel .still .panel__url {
+    font-size: 13px;
+  }
+}

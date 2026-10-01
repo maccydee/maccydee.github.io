@@ -1,0 +1,1013 @@
+/* 05 GRAVITY. Every rule is scoped under .grv. */
+
+.grv {
+  --paper: #f3efe6;
+  --white: #fffdf7;
+  --ink: #121212;
+  --cobalt: #1f3bff;
+  --tomato: #ff4b2b;
+  --marigold: #ffb800;
+  --sand: #e1d9c8;
+  --mute: #57534c;
+  --gut: clamp(16px, 2.8vw, 44px);
+  --line: 2px;
+  --display: 'Bricolage Grotesque Variable', 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --name: min(18.3vw, 37svh);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* The shared design picker is fixed at the top right, outside this root.
+     Small right-aligned items stop at this line so none of them sits in, or
+     scrolls beneath, its corner. */
+  --clear: calc(var(--picker-w, 152px) + 4px);
+
+  position: relative;
+  min-height: 100vh;
+  overflow-x: clip;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: 16px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.grv *,
+.grv *::before,
+.grv *::after {
+  box-sizing: border-box;
+}
+
+.grv :where(p, ul, h1, h2, h3) {
+  margin: 0;
+  padding: 0;
+}
+
+.grv :where(ul) {
+  list-style: none;
+}
+
+.grv :where(a) {
+  color: inherit;
+}
+
+.grv :focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 4px;
+}
+
+.grv ::selection {
+  background: var(--marigold);
+  color: var(--ink);
+}
+
+.grv.is-grabbing,
+.grv.is-grabbing * {
+  cursor: grabbing !important;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ---------- stage one: hero + work heading ---------- */
+
+.grv-stage {
+  position: relative;
+}
+
+.grv-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  contain: layout style;
+
+  --pill-fs: clamp(11px, 0.45vw + 7.5px, 19px);
+  --pill-h: clamp(26px, 1vw + 19px, 46px);
+  --pill-px: clamp(10px, 0.5vw + 8px, 22px);
+  --disc-fs: clamp(13px, 0.7vw + 9.5px, 28px);
+  --disc-h: clamp(30px, 1.3vw + 25px, 62px);
+  --disc-px: clamp(13px, 0.8vw + 9px, 30px);
+  --role-fs: clamp(14px, 0.8vw + 10px, 31px);
+  --role-h: clamp(33px, 1.4vw + 28px, 66px);
+}
+
+.grv-hero {
+  height: 100vh;
+  height: 100svh;
+  min-height: 540px;
+  display: flex;
+  flex-direction: column;
+}
+
+.grv-scene {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.grv-name {
+  position: absolute;
+  left: var(--gut);
+  bottom: 0;
+  font-family: var(--display);
+  font-weight: 800;
+  font-stretch: 100%;
+  line-height: 0.8;
+  letter-spacing: -0.028em;
+  white-space: nowrap;
+  /* Fallback where text-box-trim is missing: pull the baseline to the box edge. */
+  margin-bottom: -0.07em;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.grv .grv-name {
+  font-size: var(--name);
+}
+
+@supports (text-box-trim: trim-both) {
+  .grv .grv-name {
+    margin-bottom: 0;
+    text-box-trim: trim-both;
+    text-box-edge: cap alphabetic;
+  }
+}
+
+.grv-bl {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  vertical-align: baseline;
+}
+
+/* The floor: two doors that slide apart when the page scrolls. */
+.grv-floor {
+  position: relative;
+  z-index: 2;
+  height: var(--line);
+}
+
+.grv-floor i {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background: var(--ink);
+  transition: transform 0.55s cubic-bezier(0.7, 0, 0.15, 1);
+}
+
+.grv-floor i:first-child {
+  left: 0;
+  transform-origin: 0 50%;
+}
+
+.grv-floor i:last-child {
+  right: 0;
+  transform-origin: 100% 50%;
+}
+
+.grv-floor.is-open i {
+  transform: scaleX(0.035);
+}
+
+/* Beneath the floor: who he is, then what he does. */
+.grv-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: clamp(20px, 3vw, 56px);
+  align-items: start;
+  padding: clamp(16px, 1.6vw, 24px) var(--gut) clamp(18px, 2vw, 28px);
+}
+
+.grv-who {
+  display: grid;
+  gap: clamp(6px, 0.6vw, 10px);
+}
+
+.grv-role {
+  display: flex;
+  align-items: center;
+  gap: 0.42em;
+  font: 700 clamp(22px, 2.15vw, 32px) / 1.05 var(--display);
+  letter-spacing: -0.024em;
+}
+
+.grv-dot {
+  flex: none;
+  width: 0.42em;
+  height: 0.42em;
+  border-radius: 50%;
+  background: var(--tomato);
+}
+
+.grv-tagline {
+  max-width: 46ch;
+  font: 400 clamp(15.5px, 1.25vw, 19px) / 1.32 var(--display);
+  color: var(--mute);
+  text-wrap: balance;
+}
+
+.grv-note,
+.grv-contact-title {
+  font: 500 clamp(21px, 2.15vw, 32px) / 1.1 var(--display);
+  letter-spacing: -0.022em;
+  text-wrap: balance;
+}
+
+/* The disciplines: one flat chip each, in the colours of the big pills. */
+.grv-disc {
+  --chip-h: clamp(29px, 1vw + 23px, 38px);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: clamp(300px, 31vw, 450px);
+}
+
+.grv-disc-chip {
+  display: flex;
+  align-items: center;
+  height: var(--chip-h);
+  padding: 0 clamp(12px, 1.1vw, 17px);
+  border-radius: 999px;
+  border: 1.5px solid var(--b-line);
+  background: var(--b-bg);
+  color: var(--b-fg);
+  font: 600 clamp(13.5px, 0.5vw + 9.8px, 17px) / 1 var(--display);
+  letter-spacing: -0.012em;
+  white-space: nowrap;
+}
+
+.grv-controls {
+  display: grid;
+  gap: 9px;
+  justify-items: end;
+  margin-right: calc(var(--clear) - var(--gut));
+}
+
+.grv-readout {
+  display: grid;
+  gap: 5px;
+  text-align: right;
+  font: 400 12px/1 var(--mono);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--mute);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.grv-readout span:first-child {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.grv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 44px;
+  padding: 0 18px 0 15px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--ink);
+  font: 500 13px/1 var(--mono);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform 0.4s var(--spring),
+    background-color 0.15s,
+    color 0.15s;
+}
+
+.grv-btn:hover {
+  background: var(--ink);
+  color: var(--white);
+  transform: translateY(-2px);
+}
+
+.grv-btn:active {
+  transform: translateY(2px) scale(0.96);
+}
+
+.grv-btn svg {
+  transition: transform 0.4s var(--spring);
+}
+
+.grv-btn:hover svg {
+  transform: translateY(2px);
+}
+
+/* The band the pile pours into. The capsule stands on its floor. */
+.grv-band {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: clamp(340px, 60svh, 600px);
+  padding: 0 var(--gut);
+}
+
+.grv .grv-see .grv-link-label {
+  font-size: clamp(28px, 7.3vw, 116px);
+}
+
+/* ---------- bodies ---------- */
+
+.grv-b {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  background: var(--b-bg);
+  color: var(--b-fg);
+  border: 1.5px solid var(--b-line);
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: grab;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.grv-layer.is-static .grv-b {
+  pointer-events: none;
+  cursor: default;
+}
+
+.grv-b.is-held {
+  z-index: 2;
+  cursor: grabbing;
+}
+
+.grv-b--pill {
+  height: var(--pill-h);
+  padding: 0 var(--pill-px);
+  border-radius: 999px;
+  font: 500 var(--pill-fs) / 1 var(--mono);
+  letter-spacing: 0.01em;
+}
+
+.grv-b--discipline {
+  height: var(--disc-h);
+  padding: 0 var(--disc-px);
+  font: 600 var(--disc-fs) / 1 var(--display);
+  letter-spacing: -0.012em;
+}
+
+.grv-b--role {
+  height: var(--role-h);
+  padding: 0 calc(var(--disc-px) + 2px);
+  font: 700 var(--role-fs) / 1 var(--display);
+  letter-spacing: -0.015em;
+}
+
+.grv-b--circle,
+.grv-b--ring {
+  border-radius: 50%;
+}
+
+.grv-b--ring {
+  background: transparent;
+  border-style: solid;
+  border-color: var(--b-bg);
+}
+
+.grv-b--square {
+  border-radius: 20%;
+}
+
+.grv-b--half {
+  border-radius: 999px 999px 0 0;
+}
+
+.grv-b--quarter {
+  border-radius: 0 100% 0 0;
+}
+
+.grv-t--cobalt {
+  --b-bg: var(--cobalt);
+  --b-fg: #fff;
+  --b-line: var(--cobalt);
+}
+.grv-t--tomato {
+  --b-bg: var(--tomato);
+  --b-fg: var(--ink);
+  --b-line: var(--tomato);
+}
+.grv-t--marigold {
+  --b-bg: var(--marigold);
+  --b-fg: var(--ink);
+  --b-line: var(--marigold);
+}
+.grv-t--ink {
+  --b-bg: var(--ink);
+  --b-fg: var(--paper);
+  --b-line: var(--ink);
+}
+.grv-t--paper {
+  --b-bg: var(--white);
+  --b-fg: var(--ink);
+  --b-line: var(--ink);
+}
+.grv-t--sand {
+  --b-bg: var(--sand);
+  --b-fg: var(--ink);
+  --b-line: var(--sand);
+}
+
+.grv-dbg {
+  position: absolute;
+  outline: 1px solid rgba(255, 0, 170, 0.9);
+  background: rgba(255, 0, 170, 0.12);
+  pointer-events: none;
+}
+
+/* ---------- work ---------- */
+
+.grv-work {
+  padding: clamp(26px, 3.2vw, 48px) var(--gut) clamp(80px, 10vw, 160px);
+}
+
+.grv-work-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: clamp(16px, 2vw, 28px) clamp(20px, 3vw, 56px);
+  align-items: center;
+  padding-bottom: clamp(28px, 4vw, 60px);
+}
+
+/* A flat ink capsule: GitHub leads the repos. */
+.grv-cta {
+  grid-column: 1;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 100%;
+  height: clamp(46px, 3.8vw, 56px);
+  padding: 0 8px 0 clamp(18px, 1.7vw, 24px);
+  border-radius: 999px;
+  background: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    transform 0.4s var(--spring),
+    background-color 0.15s;
+}
+
+.grv .grv-cta {
+  color: var(--paper);
+}
+
+.grv-cta-label {
+  font: 700 clamp(18px, 1.5vw, 22px) / 1 var(--display);
+  letter-spacing: -0.015em;
+}
+
+.grv-cta-handle {
+  font: 400 13px/1 var(--mono);
+  letter-spacing: 0.01em;
+}
+
+.grv-cta-arrow {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: clamp(32px, 2.7vw, 40px);
+  height: clamp(32px, 2.7vw, 40px);
+  margin-left: 4px;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  transition: transform 0.4s var(--spring);
+}
+
+.grv-cta:hover {
+  background: var(--cobalt);
+  transform: translateY(-2px) scale(1.03);
+}
+
+.grv-cta:active {
+  transform: scale(0.97);
+}
+
+.grv-cta:hover .grv-cta-arrow {
+  transform: rotate(45deg);
+}
+
+.grv-worktitle {
+  font: 800 min(11.4vw, 30svh) / 0.86 var(--display);
+  letter-spacing: -0.028em;
+  white-space: nowrap;
+}
+
+.grv .grv-worktitle {
+  margin-left: -0.035em;
+}
+
+.grv .grv-worktitle,
+.grv-note {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.grv-count {
+  grid-column: 2;
+  grid-row: 1;
+  margin-right: calc(var(--clear) - var(--gut));
+  font: 500 13px/1 var(--mono);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.grv-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(12px, 1.5vw, 24px);
+}
+
+.grv-cell {
+  display: flex;
+  min-width: 0;
+}
+
+.grv-card {
+  --c-bg: var(--white);
+  --c-fg: var(--ink);
+  --c-line: var(--ink);
+  --c-soft: var(--mute);
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: clamp(300px, 27vw, 420px);
+  padding: clamp(20px, 2vw, 32px);
+  border: 1.5px solid var(--c-line);
+  border-radius: clamp(22px, 2.2vw, 34px);
+  background: var(--c-bg);
+  color: var(--c-fg);
+  text-decoration: none;
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  will-change: transform;
+  transition: box-shadow 0.25s ease;
+}
+
+.grv .grv-card {
+  color: var(--c-fg);
+}
+
+.grv-card--cobalt {
+  --c-bg: var(--cobalt);
+  --c-fg: #fff;
+  --c-line: var(--cobalt);
+  --c-soft: #fff;
+}
+.grv-card--tomato {
+  --c-bg: var(--tomato);
+  --c-line: var(--tomato);
+  --c-soft: var(--ink);
+}
+.grv-card--marigold {
+  --c-bg: var(--marigold);
+  --c-line: var(--marigold);
+  --c-soft: var(--ink);
+}
+.grv-card--ink {
+  --c-bg: var(--ink);
+  --c-fg: var(--paper);
+  --c-line: var(--ink);
+  --c-soft: #cfc9bd;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .grv-card {
+    cursor: grab;
+  }
+  .grv-card:hover {
+    box-shadow: 0 22px 20px -18px rgba(18, 18, 18, 0.45);
+  }
+}
+
+/* Left-grouped so no small text sits in a card's top right corner, which
+   scrolls beneath the fixed design picker. */
+.grv-card-top {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 14px;
+  font: 500 12.5px/1 var(--mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.grv-card-kind {
+  padding: 7px 11px;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.grv-card-name {
+  margin-top: clamp(28px, 4vw, 64px);
+  font: 700 clamp(30px, 3.1vw, 48px) / 0.94 var(--display);
+  letter-spacing: -0.035em;
+  overflow-wrap: anywhere;
+}
+
+.grv .grv-card-name {
+  margin-top: clamp(28px, 4vw, 64px);
+}
+
+.grv .grv-card-blurb {
+  margin-top: 14px;
+  max-width: 40ch;
+  font-size: clamp(15px, 1.12vw, 17.5px);
+  line-height: 1.36;
+  font-weight: 400;
+  color: var(--c-soft);
+}
+
+.grv-card-foot {
+  margin-top: auto;
+  padding-top: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.grv-card-url {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 500 12.5px/1.3 var(--mono);
+  letter-spacing: 0.01em;
+}
+
+.grv-card-figs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 18px;
+}
+
+.grv-fig {
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: var(--c-fg);
+  color: var(--c-bg);
+  font: 500 12.5px/1 var(--mono);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.grv-arrow {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  transition:
+    background-color 0.18s,
+    color 0.18s,
+    transform 0.45s var(--spring);
+}
+
+.grv-arrow svg {
+  transition: transform 0.45s var(--spring);
+}
+
+.grv-card:hover .grv-arrow,
+.grv-card:focus-visible .grv-arrow {
+  background: var(--c-fg);
+  color: var(--c-bg);
+  transform: scale(1.12);
+}
+
+.grv-card:hover .grv-arrow svg,
+.grv-card:focus-visible .grv-arrow svg {
+  transform: translate(2px, -2px);
+}
+
+/* ---------- contact ---------- */
+
+.grv-contact {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: clamp(520px, min(92svh, 60vw + 220px), 900px);
+  border-top: var(--line) solid var(--ink);
+  overflow: hidden;
+  overflow: clip;
+}
+
+.grv-contact-title {
+  padding: clamp(18px, 2vw, 28px) var(--gut) 0;
+}
+
+/* Two capsules stacked like blocks: the first rests on the second, offset. */
+.grv-links {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding: 0 var(--gut);
+}
+
+.grv-link:first-child {
+  margin-left: clamp(40px, 19vw, 300px);
+}
+
+.grv-link {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 2.6vw, 44px);
+  height: clamp(104px, 15.4vw, 236px);
+  padding: 0 clamp(22px, 3.4vw, 56px) 0 clamp(28px, 4.6vw, 76px);
+  border-radius: 999px;
+  background: var(--l-bg);
+  text-decoration: none;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.grv .grv-link {
+  color: var(--l-fg);
+}
+
+.grv-link--ink {
+  --l-bg: var(--ink);
+  --l-fg: var(--paper);
+}
+
+.grv-link--cobalt {
+  --l-bg: var(--cobalt);
+  --l-fg: #fff;
+}
+
+.grv-link-text {
+  display: grid;
+  gap: clamp(4px, 0.6vw, 10px);
+}
+
+.grv-link-label {
+  font: 800 clamp(44px, 10vw, 160px) / 0.8 var(--display);
+  letter-spacing: -0.03em;
+}
+
+.grv-link-handle {
+  font: 500 clamp(12px, 1.15vw, 17px) / 1 var(--mono);
+  letter-spacing: 0.02em;
+  padding-left: 0.4em;
+}
+
+.grv-link-arrow {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: clamp(44px, 7vw, 108px);
+  height: clamp(44px, 7vw, 108px);
+  border-radius: 50%;
+  background: var(--l-fg);
+  color: var(--l-bg);
+  transition: transform 0.45s var(--spring);
+}
+
+.grv-link-arrow svg {
+  width: 44%;
+  height: 44%;
+}
+
+.grv-link:hover .grv-link-arrow,
+.grv-link:focus-visible .grv-link-arrow {
+  transform: rotate(45deg) scale(1.08);
+}
+
+.grv-foot {
+  display: flex;
+  align-items: center;
+  gap: clamp(20px, 3vw, 44px);
+  padding: 20px var(--gut) 30px;
+  font: 500 13px/1 var(--mono);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.grv-foot a {
+  padding: 6px 0;
+  text-underline-offset: 4px;
+}
+
+/* ---------- reduced motion: a composed still ---------- */
+
+.grv--still .grv-band {
+  height: auto;
+  padding-top: clamp(40px, 6vw, 96px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grv *,
+  .grv *::before,
+  .grv *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 1080px) {
+  .grv-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Who on the left; what, then the controls, on the right. */
+  .grv-strip {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px clamp(20px, 3vw, 56px);
+  }
+
+  .grv-who {
+    grid-row: 1 / span 2;
+  }
+
+  .grv-disc,
+  .grv-controls {
+    grid-column: 2;
+    margin-right: calc(var(--clear) - var(--gut));
+  }
+
+  .grv-disc {
+    max-width: 400px;
+  }
+
+  .grv-controls {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    justify-self: start;
+  }
+
+  .grv-readout {
+    text-align: left;
+  }
+
+  .grv-card {
+    min-height: clamp(280px, 38vw, 400px);
+  }
+}
+
+@media (max-width: 900px) {
+  /* One column that stops short of the picker's corner, so none of this
+     small text scrolls beneath it. */
+  .grv-strip {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 13px;
+    padding-right: var(--clear);
+  }
+
+  .grv-who {
+    grid-row: auto;
+  }
+
+  .grv-disc,
+  .grv-controls {
+    grid-column: auto;
+    margin-right: 0;
+  }
+
+  .grv-disc {
+    max-width: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .grv {
+    --name: min(20.8vw, 30svh);
+  }
+
+  .grv-disc {
+    gap: 5px;
+  }
+
+  .grv-readout {
+    font-size: 10.5px;
+  }
+
+  .grv-band {
+    height: clamp(340px, 56svh, 460px);
+  }
+
+  .grv .grv-see {
+    width: 100%;
+    height: 92px;
+    gap: 10px;
+    padding: 0 14px 0 22px;
+    justify-content: space-between;
+  }
+
+  .grv .grv-see .grv-link-label {
+    font-size: clamp(24px, 7.1vw, 34px);
+  }
+
+  .grv-work-head {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .grv-cta {
+    max-width: calc(100% - var(--clear) + var(--gut));
+    gap: 7px;
+    padding: 0 5px 0 14px;
+  }
+
+  .grv-cta-label {
+    font-size: 16px;
+  }
+
+  .grv-cta-handle {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+  }
+
+  .grv-cta-arrow {
+    width: 28px;
+    height: 28px;
+  }
+
+  .grv-worktitle {
+    font-size: 15.6vw;
+  }
+
+  .grv-count {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
+    margin-right: 0;
+  }
+
+  .grv-note {
+    max-width: calc(100% - var(--clear) + var(--gut));
+  }
+
+  .grv-foot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .grv-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .grv-card {
+    min-height: 0;
+  }
+
+  .grv-card-name {
+    font-size: clamp(30px, 9.4vw, 40px);
+  }
+
+  .grv-contact {
+    height: clamp(440px, 68svh, 600px);
+  }
+
+  .grv-links {
+    align-items: stretch;
+  }
+
+  .grv-link {
+    justify-content: space-between;
+    height: 100px;
+  }
+
+  .grv-link:first-child {
+    margin-left: 0;
+  }
+
+  .grv-link-label {
+    font-size: clamp(40px, 12.5vw, 52px);
+  }
+}
