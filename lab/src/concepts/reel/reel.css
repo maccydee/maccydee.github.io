@@ -841,6 +841,9 @@
 }
 .reel .shut--a {
   top: 0;
+  /* one pixel of overlap: on an odd viewport height the 50% seam between the two
+     shutters lands on a half pixel and the reel underneath shows through it */
+  height: calc(50% + 1px);
 }
 .reel .shut--b {
   top: 50%;

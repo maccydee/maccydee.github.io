@@ -74,6 +74,9 @@ export default function Film() {
   // Smooth scroll, driven by the GSAP ticker so Lenis and ScrollTrigger share one clock.
   useEffect(() => {
     ScrollTrigger.config({ ignoreMobileResize: true })
+    // Touch devices keep their native momentum scroll: Lenis adds nothing there and
+    // an animated scroll it owns cannot be interrupted by a finger.
+    if (window.matchMedia('(pointer: coarse)').matches) return
     const lenis = new Lenis({ autoRaf: false, lerp: 0.11 })
     lenisRef.current = lenis
     lenis.on('scroll', ScrollTrigger.update)
@@ -134,6 +137,17 @@ export default function Film() {
         const target = compact ? full : W * 0.56 - pad
         const fMax = compact ? Math.min(H * 0.17, (H * 0.27) / n / 0.885) : Math.min(H * 0.34, (H * 0.52) / n / 0.885)
         lines.forEach((l) => fitLine(l, { target, fMax, fHard: fMax * 1.3 }))
+        // On a short phone a three-line name climbs into the outlined numeral.
+        // The numeral gives way: it shrinks to the space left above the name.
+        const num = panel.querySelector<HTMLElement>('.panel__num')
+        const name = panel.querySelector<HTMLElement>('.panel__name')
+        if (num && name) {
+          num.style.fontSize = ''
+          if (compact) {
+            const room = name.offsetTop - num.offsetTop - 10
+            if (room < num.offsetHeight) num.style.fontSize = `${Math.max(40, room / 0.8).toFixed(1)}px`
+          }
+        }
       })
 
       // 05: links rest condensed and open out to the full width on hover.
@@ -425,12 +439,48 @@ export default function Film() {
       $1('.foot').dataset.at = String(T.total)
       tl.to({}, { duration: 0.01 }, T.total - 0.01)
 
+      // Rest points: the composed frame of every scene and every reel panel. When scrolling
+      // stops the playhead eases to one of them, so the film never rests mid-wipe or with a
+      // panel half off screen. A scroll that has covered more than a seventh of the way to the
+      // next rest point carries on to it; a smaller nudge returns. Any new wheel, touch or key
+      // input cancels the ease, so the viewer is never held.
+      const rests = [
+        0,
+        1.5, // role, ink on lime
+        2.8, // role, inverted
+        T.d1 + 0.75,
+        T.d2 + 1.0,
+        T.d3 + 0.85,
+        T.d4 + 1.25,
+        ...dxEls.map((_, j) => T.extra + j * EXTRA_BEAT + 1.15),
+        ...panels.map((_, k) => T.reel + k * STEP),
+        T.total,
+      ]
+      el.dataset.rests = rests.map((r) => r.toFixed(2)).join(',')
+      const snapTo = (progress: number, self?: ScrollTrigger) => {
+        const t = progress * T.total
+        let lo = rests[0]
+        let hi = rests[rests.length - 1]
+        for (const r of rests) {
+          if (r <= t + 1e-4) lo = r
+          if (r >= t - 1e-4) {
+            hi = r
+            break
+          }
+        }
+        if (hi <= lo) return lo / T.total
+        const f = (t - lo) / (hi - lo)
+        const forward = (self?.direction ?? 1) >= 0
+        return (forward ? (f > 0.14 ? hi : lo) : f < 0.86 ? lo : hi) / T.total
+      }
+
       const st = ScrollTrigger.create({
         trigger: spacer,
         start: 'top top',
         end: 'bottom bottom',
         scrub: true,
         animation: tl,
+        snap: { snapTo, delay: 0.12, duration: { min: 0.25, max: 0.9 }, ease: 'power2.inOut', inertia: false },
       })
 
       /* ---------------------------------------------------------------- */
@@ -559,7 +609,7 @@ export default function Film() {
         if (Math.abs(window.scrollY - y) < 4) return
         const lenis = lenisRef.current
         if (lenis) lenis.scrollTo(y, { duration: 0.9 })
-        else window.scrollTo(0, y)
+        else window.scrollTo({ top: y, behavior: 'smooth' })
       }
       el.addEventListener('focusin', onFocus)
 
@@ -574,6 +624,7 @@ export default function Film() {
         for (const n of [zoom, win, winIn, ...tracks.map((b) => b.el), ...fills]) n.style.transform = ''
         s2b.style.clipPath = ''
         for (const o of ovls) if (o) o.style.transform = ''
+        delete el.dataset.rests
       }
     },
     { scope: root, dependencies: [fonts, layout], revertOnUpdate: true },
@@ -582,7 +633,7 @@ export default function Film() {
   const toStart = () => {
     const lenis = lenisRef.current
     if (lenis) lenis.scrollTo(0, { duration: 2.4 })
-    else window.scrollTo(0, 0)
+    else window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const d = person.disciplines
