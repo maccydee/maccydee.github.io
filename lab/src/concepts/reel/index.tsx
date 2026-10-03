@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import '@fontsource-variable/roboto-flex/full.css'
+import './font.css'
 import '@fontsource/instrument-serif/400.css'
 import '@fontsource/instrument-serif/400-italic.css'
 import './reel.css'

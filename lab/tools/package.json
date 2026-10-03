@@ -1,0 +1,10 @@
+{
+  "name": "maccydee-lab-tools",
+  "private": true,
+  "type": "module",
+  "description": "Local screenshot tooling. Not installed in CI.",
+  "dependencies": {
+    "playwright-webkit": "^1.63.0",
+    "puppeteer-core": "^25.12.0"
+  }
+}
