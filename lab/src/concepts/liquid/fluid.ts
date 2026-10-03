@@ -63,9 +63,10 @@ export class Fluid {
   private prev = new Float32Array(TRAIL * 2)
   private trailInit = false
   private click = new Float32Array([50, 50, 99])
-  private tint = [0.05, 0.5, 0.55]
+  private tint = [0.016, 0.11, 0.3]
   private tintAmt = 0
   private light = 0
+  private peak = 0
   private dirty = true
   private winSig = -1
   private ro: ResizeObserver | null = null
@@ -139,7 +140,7 @@ export class Fluid {
     this.display = this.build(displayFrag({ proc: !this.sim, lite: this.opts.lite }))
     if (!this.display) return false
 
-    for (const name of ['uRes', 'uTime', 'uLight', 'uScale', 'uTint', 'uTintAmt', 'uTrail', 'uClick', 'uSim', 'uSimTexel']) {
+    for (const name of ['uRes', 'uTime', 'uLight', 'uPeak', 'uScale', 'uTint', 'uTintAmt', 'uTrail', 'uClick', 'uSim', 'uSimTexel']) {
       this.uD[name] = gl.getUniformLocation(this.display, name)
     }
     if (this.sim) {
@@ -355,7 +356,7 @@ export class Fluid {
     this.cssW = w
     this.cssH = h
     // keep feature size roughly constant against the short edge
-    this.scale = w < h ? 7.4 : 2.8
+    this.scale = w < h ? 6.2 : 2.8
     const bw = Math.max(2, Math.round(w * this.res))
     const bh = Math.max(2, Math.round(h * this.res))
     if (this.canvas.width !== bw || this.canvas.height !== bh) {
@@ -402,6 +403,10 @@ export class Fluid {
     this.tintAmt += (f.tintAmt - this.tintAmt) * k
     for (let i = 0; i < 3; i++) this.tint[i] += (f.tint[i] - this.tint[i]) * k
     this.light = this.opts.still ? f.light : this.light + (f.light - this.light) * (1 - Math.exp(-dt * 12))
+    const peakWas = this.peak
+    // highlights are let go slowly and reined in fast
+    this.peak = this.opts.still ? f.peak : this.peak + (f.peak - this.peak) * (1 - Math.exp(-dt * (f.peak < this.peak ? 14 : 3)))
+    if (Math.abs(this.peak - peakWas) > 1e-4) this.dirty = true
     const after = this.tintAmt + this.tint[0] + this.tint[1] + this.tint[2] + this.light
     if (Math.abs(after - before) > 1e-4) this.dirty = true
 
@@ -580,6 +585,7 @@ export class Fluid {
     gl.uniform2f(u.uRes, this.canvas.width, this.canvas.height)
     gl.uniform1f(u.uTime, this.time)
     gl.uniform1f(u.uLight, this.light)
+    gl.uniform1f(u.uPeak, this.peak)
     gl.uniform1f(u.uScale, this.scale)
     gl.uniform3f(u.uTint, this.tint[0], this.tint[1], this.tint[2])
     gl.uniform1f(u.uTintAmt, this.tintAmt)
@@ -661,6 +667,7 @@ export class Fluid {
       res: this.res,
       fps: Math.round(this.fps),
       light: this.light,
+      peak: this.peak,
       lost: this.gl ? this.gl.isContextLost() : true,
     }
   }

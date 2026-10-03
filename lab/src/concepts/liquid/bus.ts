@@ -14,9 +14,11 @@ export const bus = {
     seen: false,
   },
   fluid: {
-    /** 0 = deep water, 1 = sunlit shallows */
+    /** 0 = seen through letterforms, 1 = full bleed behind light type */
     light: 0,
-    tint: [0.03, 0.56, 0.6] as [number, number, number],
+    /** 1 = nothing is set over or against the water, so highlights may run to white */
+    peak: 0,
+    tint: [0.016, 0.13, 0.38] as [number, number, number],
     tintAmt: 0,
   },
   /** Screen rect the preview swatch should copy from the water, or null. */
@@ -42,17 +44,16 @@ export const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(
 export const easeOut = (t: number, p = 3) => 1 - Math.pow(1 - t, p)
 
 /**
- * Water colours, cycled by project index. Each is the sunlit body colour of
- * the water in the arch; the shader derives its depths from it. All stay in
- * the water family.
+ * Sea states, cycled by project index: the body colour of the water in the
+ * arch. The shader derives its depths and its lit crests from it.
  */
 export const WATERS: readonly [number, number, number][] = [
-  [0.03, 0.56, 0.6], // lagoon
-  [0.04, 0.24, 0.52], // deep sea
-  [0.0, 0.46, 0.44], // teal
-  [0.3, 0.6, 0.72], // glacier
-  [0.08, 0.5, 0.36], // sea green
-  [0.24, 0.38, 0.58], // slate blue
-  [0.0, 0.4, 0.62], // azure
-  [0.14, 0.58, 0.52], // shallows
+  [0.016, 0.13, 0.38], // open ocean
+  [0.15, 0.22, 0.3], // storm grey-blue
+  [0.02, 0.3, 0.36], // shallows
+  [0.008, 0.045, 0.16], // deep trench
+  [0.2, 0.3, 0.44], // dawn
+  [0.03, 0.22, 0.17], // kelp green
+  [0.0, 0.2, 0.34], // gulf
+  [0.09, 0.16, 0.24], // squall
 ]

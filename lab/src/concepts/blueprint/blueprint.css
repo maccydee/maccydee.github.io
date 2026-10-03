@@ -1996,9 +1996,9 @@
     top: calc(var(--bar) + 20px);
   }
 
+  /* On phones the plates rise into this caption, so it is dropped. */
   .bp-stack .bp-sec__note {
-    margin-top: 10px;
-    font-size: 12px;
+    display: none;
   }
 
   .bp-lead {

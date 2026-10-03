@@ -25,7 +25,6 @@
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -160,18 +159,13 @@
   display: none;
 }
 
-.liq.liq--nogl .liq-aperture {
-  background:
-    radial-gradient(90% 70% at 20% 15%, rgba(232, 246, 240, 0.9), transparent 60%),
-    radial-gradient(80% 80% at 85% 70%, rgba(120, 200, 208, 0.55), transparent 65%),
-    linear-gradient(165deg, #bfe6e2, #9fd6d8 55%, #c9ebe4);
-}
-
+.liq.liq--nogl .liq-aperture,
 .liq.liq--nogl[data-docked='1'] .liq-slot,
 .liq.liq--nogl.liq--still .liq-slot {
   background:
-    radial-gradient(90% 60% at 30% 20%, rgba(60, 160, 170, 0.75), transparent 65%),
-    linear-gradient(170deg, #0f6f7c, #0a4a66 60%, #0b5f6a);
+    radial-gradient(90% 60% at 25% 20%, rgba(18, 74, 96, 0.8), transparent 65%),
+    radial-gradient(80% 70% at 80% 85%, rgba(6, 22, 52, 0.9), transparent 70%),
+    linear-gradient(170deg, #0a2c58, #061a3a 55%, #0a3550);
 }
 
 /* ---------------------------------------------------------------- top bar */
@@ -512,7 +506,7 @@
   }
 }
 
-/* who: role and tagline at scale over the open water */
+/* who: role and tagline at scale over the open sea */
 .liq .liq-state {
   position: absolute;
   inset: 0;
@@ -547,7 +541,7 @@
   align-self: flex-end;
   width: min(100%, 31rem);
   font-family: var(--serif);
-  font-size: clamp(1.2rem, 2vw, 1.9rem);
+  font-size: clamp(1.5rem, 2vw, 1.9rem);
   line-height: 1.24;
   letter-spacing: -0.01em;
   font-variation-settings: 'opsz' 48, 'wght' 420, 'SOFT' 0, 'WONK' 0;
@@ -555,6 +549,17 @@
 
 .liq .liq-state__tagtext {
   display: block;
+}
+
+/* Full-bleed stages sit on deep sea, so their type is set in the page colour.
+   In reduced motion the same blocks sit on the page itself and stay ink. */
+.liq:not(.liq--still) .liq-state,
+.liq:not(.liq--still) .liq-does {
+  color: var(--bone);
+}
+
+.liq:not(.liq--still) .liq-does .liq-label__dim {
+  color: rgba(239, 234, 226, 0.92);
 }
 
 /* what he does: the disciplines, large, one line at a time over the water */
@@ -1047,7 +1052,7 @@
 }
 
 .liq.liq--nogl .liq-card__swatch {
-  background: linear-gradient(150deg, #1b8a94, #0b4f6c 55%, #127a80);
+  background: linear-gradient(150deg, #0c3f6e, #061a3a 55%, #0e4a5e);
 }
 
 .liq .liq-card__chip {
@@ -1252,7 +1257,9 @@
   top: -3px;
   width: 6px;
   height: 6px;
-  background: var(--ink);
+  /* ink on the page, light on the sea */
+  background: #fff;
+  mix-blend-mode: difference;
 }
 
 .liq .liq-cursor__ring {
@@ -1361,7 +1368,7 @@
 
   .liq .liq-state__tag {
     align-self: flex-start;
-    font-size: 1.28rem;
+    font-size: 1.5rem;
   }
 
   .liq .liq-work {

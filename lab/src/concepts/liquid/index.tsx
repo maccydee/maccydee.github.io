@@ -164,6 +164,10 @@ export default function Liquid() {
       // generous margins: on touch devices scroll runs ahead of this handler
       if (cr) push(list.current?.getBoundingClientRect(), 160)
 
+      // only the arch has no type set over or against it
+      const listTop = list.current?.getBoundingClientRect().top ?? Infinity
+      bus.fluid.peak = t >= 1 && listTop > vh + 60 ? 1 : 0
+
       if (env.still) {
         bus.fluid.light = 0
         push(name.current?.getBoundingClientRect(), 24)
@@ -222,6 +226,7 @@ export default function Liquid() {
       window.removeEventListener('scroll', on)
       window.removeEventListener('resize', on)
       bus.fluid.light = 0
+      bus.fluid.peak = 0
       bus.windows = null
     }
   }, [env.still, env.small, ready])
