@@ -1338,20 +1338,21 @@
   }
 
   .liq .liq-does__list {
-    gap: 0.3em;
+    gap: 0.5em;
     font-size: min(11.2vw, 8.2vh);
   }
 
+  /* long names wrap to two lines here: a tight pair, a clear step to the next
+     item, and the numeral level with the first line */
   .liq .liq-does__item {
     grid-template-columns: 1.1em minmax(0, 1fr);
     align-items: start;
-    line-height: 1;
+    line-height: 1.02;
   }
 
-  /* lines wrap here: keep each numeral level with its first line */
   .liq .liq-does__n {
     font-size: 0.36em;
-    transform: translateY(0.55em);
+    transform: translateY(0.62em);
   }
 
   .liq .liq-does__t {

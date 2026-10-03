@@ -322,12 +322,13 @@ function Hero({ env, rest, heroRef, nameRef, ready, covered }: HeroProps) {
   const nameOpacity = useTransform(p, (v) => 1 - span(v, T.openEnd + 0.005, T.openEnd + 0.025))
   const introOpacity = useTransform(p, (v) => 1 - span(v, 0, 0.05))
   const introY = useTransform(p, (v) => -40 * span(v, 0, 0.07))
-  const stateOpacity = useTransform(p, (v) => 1 - span(v, T.roleOut, T.roleOut + 0.065))
+  // stages come and go on a trigger, not a scrub: they never rest half faded
+  const inRole = (v: number) => v > T.roleIn - 0.03 && v < T.roleOut + 0.03
+  const inDoes = (v: number) => v > T.doesIn - 0.01 && v < T.doesOut + 0.03
+  const [roleOn, setRoleOn] = useState(() => inRole(p.get()))
+  const [doesOn, setDoesOn] = useState(() => inDoes(p.get()))
   const stateY = useTransform(p, (v) => (v < T.roleOut ? lerp(30, -20, span(v, T.roleIn, T.roleOut)) : lerp(-20, -90, span(v, T.roleOut, T.roleOut + 0.08))))
-  const stateVis = useTransform(p, (v) => (v > T.roleIn - 0.03 && v < T.roleOut + 0.07 ? 'visible' : 'hidden'))
-  const doesOpacity = useTransform(p, (v) => 1 - span(v, T.doesOut, T.doesOut + 0.07))
   const doesY = useTransform(p, (v) => (v < T.doesOut ? lerp(26, -18, span(v, T.doesIn, T.doesOut)) : lerp(-18, -90, span(v, T.doesOut, T.doesOut + 0.08))))
-  const doesVis = useTransform(p, (v) => (v > T.doesIn - 0.01 && v < T.doesOut + 0.075 ? 'visible' : 'hidden'))
   const [first, ...restWords] = person.role.split(' ')
 
   // each discipline sends a ring out across the water as it lands
@@ -335,13 +336,18 @@ function Hero({ env, rest, heroRef, nameRef, ready, covered }: HeroProps) {
   const landed = useRef(0)
   useMotionValueEvent(p, 'change', (v) => {
     if (!live) return
+    if (inRole(v) !== roleOn) setRoleOn(inRole(v))
+    if (inDoes(v) !== doesOn) setDoesOn(inDoes(v))
     let count = 0
-    for (let i = 0; i < n; i++) if (v > lineAt(i) + 0.045) count = i + 1
-    if (v > T.doesOut) count = n
+    for (let i = 0; i < n; i++) if (v > lineAt(i)) count = i + 1
     if (count > landed.current && v < T.doesOut) {
+      // the ring goes out as the line settles, about half a second into its rise
       for (let i = landed.current; i < count; i++) {
-        const r = lines.current[i]?.getBoundingClientRect()
-        if (r) bus.splash?.(r.left + Math.min(r.width * 0.5, 320), r.top + r.height * 0.5, 1)
+        const el = lines.current[i]
+        window.setTimeout(() => {
+          const r = el?.getBoundingClientRect()
+          if (r && r.width) bus.splash?.(r.left + Math.min(r.width * 0.5, 320), r.top + r.height * 0.5, 1)
+        }, 480 + (i - landed.current) * 140)
       }
     }
     landed.current = count
@@ -387,7 +393,10 @@ function Hero({ env, rest, heroRef, nameRef, ready, covered }: HeroProps) {
         <motion.div
           className="liq-state"
           aria-hidden="true"
-          style={live ? { opacity: stateOpacity, y: stateY, visibility: stateVis as unknown as MotionValue<'visible' | 'hidden'> } : undefined}
+          initial={false}
+          animate={live ? { opacity: roleOn ? 1 : 0 } : undefined}
+          transition={{ duration: 0.45, ease: 'easeOut' }}
+          style={live ? { y: stateY } : undefined}
         >
           <p className="liq-state__role">
             <Rise p={p} from={T.roleIn} to={T.roleIn + 0.11} live={live}>
@@ -407,7 +416,10 @@ function Hero({ env, rest, heroRef, nameRef, ready, covered }: HeroProps) {
         {/* 3. what he does: the disciplines, one line at a time */}
         <motion.div
           className="liq-does"
-          style={live ? { opacity: doesOpacity, y: doesY, visibility: doesVis as unknown as MotionValue<'visible' | 'hidden'> } : undefined}
+          initial={false}
+          animate={live ? { opacity: doesOn ? 1 : 0 } : undefined}
+          transition={{ duration: 0.45, ease: 'easeOut' }}
+          style={live ? { y: doesY } : undefined}
         >
           <p className="liq-label liq-does__label">
             <Rise p={p} from={T.doesIn} to={T.doesIn + 0.07} live={live}>
@@ -440,12 +452,28 @@ function Hero({ env, rest, heroRef, nameRef, ready, covered }: HeroProps) {
   )
 }
 
-/** A line that rises out of a clip as scroll passes through [from, to]. */
-function Rise({ p, from, to, live, className, children }: { p: MotionValue<number>; from: number; to: number; live: boolean; className?: string; children: ReactNode }) {
-  const y = useTransform(p, (v) => `${140 * (1 - easeOut(span(v, from, to), 4))}%`)
+/**
+ * A line that rises out of a clip once scroll passes `from`, and drops back
+ * when scroll returns above it. The scroll position only pulls the trigger:
+ * the reveal itself runs on time and always finishes, so the line is either
+ * fully hidden or fully shown wherever the page comes to rest. (`to` is kept
+ * for call-site readability; it no longer scrubs anything.)
+ */
+function Rise({ p, from, live, className, children }: { p: MotionValue<number>; from: number; to?: number; live: boolean; className?: string; children: ReactNode }) {
+  const [on, setOn] = useState(() => p.get() > from)
+  useMotionValueEvent(p, 'change', (v) => {
+    const next = v > from
+    if (next !== on) setOn(next)
+  })
   return (
     <span className={`liq-clip${className ? ` ${className}` : ''}`}>
-      <motion.span style={live ? { y } : undefined}>{children}</motion.span>
+      <motion.span
+        initial={false}
+        animate={live ? { y: on ? '0%' : '140%' } : undefined}
+        transition={{ duration: on ? 0.95 : 0.5, ease: [0.16, 1, 0.3, 1] }}
+      >
+        {children}
+      </motion.span>
     </span>
   )
 }
